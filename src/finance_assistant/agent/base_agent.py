@@ -37,8 +37,8 @@ except Exception:
             return Response(f"Fallback agent reply for: {message}")
 
 
-SAMPLE_SPREADSHEET_ID = "1jmkOtmjPNscHO91fQz4JC1XiSpn7reR8CzS34YUcPKM"
-SAMPLE_RANGE_NAME = "B2:E17"
+SAMPLE_SPREADSHEET_ID = "19HBfcD7gLrvMQFW9RWBezGqtvNh75acAICPevBJWAkY"
+SAMPLE_RANGE_NAME = "'Despesas'!B1:E"
 SHEETS_SCOPES = ["https://www.googleapis.com/auth/spreadsheets"]
 
 class BaseAgent:
@@ -60,7 +60,6 @@ class BaseAgent:
         google_sheets_tool = GoogleSheetsTools(
             spreadsheet_id=SAMPLE_SPREADSHEET_ID,
             spreadsheet_range=SAMPLE_RANGE_NAME,
-            credentials_path="assets/credentials.json",
             oauth_port=8080,
             scopes=SHEETS_SCOPES,
             update_sheet=True,
