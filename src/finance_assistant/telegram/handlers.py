@@ -1,9 +1,16 @@
 """Telegram message and command handlers."""
 
-def handle_start(update, context) -> None:
-    """Handle the /start command."""
-    pass
+from telegram import Update
+from telegram.ext import ContextTypes
 
-def handle_message(update, context) -> None:
-    """Handle incoming text messages."""
-    pass
+STATIC_REPLY = "Hello from your Finance Assistant. I am ready to help you manage your finances."
+
+
+def handle_start(update: Update, context: ContextTypes.DEFAULT_TYPE) -> None:
+    """Handle the /start command."""
+    update.message.reply_text("Starting")
+
+
+async def handle_message(update: Update, context: ContextTypes.DEFAULT_TYPE) -> None:
+    """Handle incoming text messages and reply with a static response."""
+    await update.message.reply_text(STATIC_REPLY)
