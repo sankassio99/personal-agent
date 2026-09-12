@@ -4,3 +4,4 @@ __pycache__/
 .venv/
 .DS_Store
 src/finance_assistant.egg-info
+.vscode/mcp.json
