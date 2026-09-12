@@ -3,3 +3,4 @@ __pycache__/
 .env
 .venv/
 .DS_Store
+src/finance_assistant.egg-info
