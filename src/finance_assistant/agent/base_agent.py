@@ -14,7 +14,7 @@ except Exception:
     class Gemini:
         """Fallback Gemini model object used when Agno is unavailable."""
 
-        def __init__(self, id: str = "gemini-2.5-flash-lite", api_key: str = ""):
+        def __init__(self, id: str = "gemini-3.8-flash", api_key: str = ""):
             self.id = id
             self.api_key = api_key
 
@@ -43,7 +43,7 @@ class BaseAgent:
     """
 
     def __init__(self, model_id: str | None = None, api_key: str | None = None):
-        self.model_id = model_id or getattr(settings, "gemini_model_id", "gemini-2.5-flash-lite")
+        self.model_id = model_id or getattr(settings, "gemini_model_id", "gemini-3.8-flash")
         self.api_key = api_key or getattr(settings, "gemini_api_key", os.getenv("GEMINI_API_KEY", ""))
         logger.info("BaseAgent configured with model_id=%s", self.model_id)
         self.model = Gemini(id=self.model_id, api_key=self.api_key)
