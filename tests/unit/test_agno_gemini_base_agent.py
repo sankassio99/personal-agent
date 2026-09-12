@@ -1,6 +1,32 @@
+import importlib
+
 from finance_assistant.agent.base_agent import BaseAgent
 from finance_assistant.agent.response_agent import GeminiResponseAgent
+from finance_assistant.config import settings as settings_module
 from finance_assistant.config.settings import settings
+
+
+def test_google_environment_settings_are_exposed_in_settings_surface(monkeypatch):
+    monkeypatch.setenv("GOOGLE_CLIENT_ID", "test-client-id")
+    monkeypatch.setenv("GOOGLE_CLIENT_SECRET", "test-client-secret")
+    monkeypatch.setenv("GOOGLE_PROJECT_ID", "test-project-id")
+
+    importlib.reload(settings_module)
+
+    assert settings_module.settings.google_client_id == "test-client-id"
+    assert settings_module.settings.google_client_secret == "test-client-secret"
+    assert settings_module.settings.google_project_id == "test-project-id"
+
+
+def test_google_sheets_repository_and_client_can_be_created_from_placeholder_contract():
+    from finance_assistant.infrastructure.google_sheets.client import GoogleSheetsClient
+    from finance_assistant.infrastructure.google_sheets.repositories import GoogleSheetsRepository
+
+    client = GoogleSheetsClient(credentials_path="")
+    repository = GoogleSheetsRepository(client)
+
+    assert isinstance(client, GoogleSheetsClient)
+    assert repository.client is client
 
 
 def test_base_agent_selects_gemini_flash_lite_model(monkeypatch):

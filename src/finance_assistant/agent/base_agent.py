@@ -35,6 +35,14 @@ except Exception:
             return Response(f"Fallback agent reply for: {message}")
 
 
+try:
+    from finance_assistant.infrastructure.google_sheets.client import GoogleSheetsClient
+    from finance_assistant.infrastructure.google_sheets.repositories import GoogleSheetsRepository
+except Exception:
+    GoogleSheetsClient = None
+    GoogleSheetsRepository = None
+
+
 class BaseAgent:
     """Base abstraction for model-backed agents in the repo.
 
@@ -53,3 +61,22 @@ class BaseAgent:
         """Create an Agno-style agent from a common model configuration."""
         logger.info("Creating Agent with instructions length=%s", len(instructions))
         return Agent(model=self.model, instructions=instructions, **kwargs)
+
+    def google_sheets_tool(self, spreadsheet_id: str | None = None,
+                            spreadsheet_range: str | None = None,
+                            credentials_path: str | None = None):
+        """Return an optional Google Sheets repository object behind a config guard.
+
+        The method is intentionally import-safe: if the optional library stack
+        is unavailable, it returns None rather than raising.
+        """
+        if GoogleSheetsRepository is None or GoogleSheetsClient is None:
+            logger.info("Google Sheets tool unavailable because the optional dependency stack is missing.")
+            return None
+
+        client = GoogleSheetsClient(
+            credentials_path=credentials_path or settings.google_sheets_credentials,
+            spreadsheet_id=spreadsheet_id,
+            spreadsheet_range=spreadsheet_range,
+        )
+        return GoogleSheetsRepository(client)
