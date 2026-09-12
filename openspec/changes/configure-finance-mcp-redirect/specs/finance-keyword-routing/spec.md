@@ -1,7 +1,7 @@
 ## ADDED Requirements
 
-### Requirement: Route finance keyword messages to Google Spreadsheet MCP
-The Telegram bot SHALL route a message whose trimmed text begins with the case-insensitive `/finance` keyword and a valid token boundary to the Google Spreadsheet MCP finance service, passing the text after the keyword as the request.
+### Requirement: Route finance keyword messages directly to Google Spreadsheet MCP
+The Telegram bot SHALL route a message whose trimmed text begins with the case-insensitive `/finance` keyword and a valid token boundary directly to the Google Spreadsheet MCP finance service, passing the text after the keyword as the request through the Agno GoogleSheetsTools-backed service boundary.
 
 #### Scenario: Finance request is routed
 - **WHEN** a user sends `/finance show my spending this month`
