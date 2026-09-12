@@ -11,6 +11,8 @@ class Settings:
 
     telegram_token: str = os.getenv("TELEGRAM_BOT_TOKEN", "")
     google_sheets_credentials: str = os.getenv("GOOGLE_SHEETS_CREDENTIALS", "")
+    gemini_api_key: str = os.getenv("GEMINI_API_KEY", "")
+    gemini_model_id: str = os.getenv("GEMINI_MODEL_ID", "gemini-2.5-flash-lite")
 
 
 settings = Settings()
