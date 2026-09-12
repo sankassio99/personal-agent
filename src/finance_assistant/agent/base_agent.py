@@ -16,7 +16,7 @@ except Exception:
     class Gemini:
         """Fallback Gemini model object used when Agno is unavailable."""
 
-        def __init__(self, id: str = "gemini-2.5-flash", api_key: str = ""):
+        def __init__(self, id: str = "gemini-2.5-flash-lite", api_key: str = ""):
             self.id = id
             self.api_key = api_key
 
@@ -49,7 +49,7 @@ class BaseAgent:
     """
 
     def __init__(self, model_id: str | None = None, api_key: str | None = None):
-        self.model_id = model_id or getattr(settings, "gemini_model_id", "gemini-2.5-flash")
+        self.model_id = model_id or getattr(settings, "gemini_model_id", "gemini-2.5-flash-lite")
         self.api_key = api_key or getattr(settings, "gemini_api_key", os.getenv("GEMINI_API_KEY", ""))
         logger.info("BaseAgent configured with model_id=%s", self.model_id)
         self.model = Gemini(id=self.model_id, api_key=self.api_key)
@@ -60,7 +60,12 @@ class BaseAgent:
         google_sheets_tool = GoogleSheetsTools(
             spreadsheet_id=SAMPLE_SPREADSHEET_ID,
             spreadsheet_range=SAMPLE_RANGE_NAME,
-            oauth_port=8080  # Porta usada para abrir o navegador e fazer a autenticação OAuth inicial
+            credentials_path="assets/credentials.json",
+            oauth_port=8080,
+            scopes=SHEETS_SCOPES,
+            update_sheet=True,
+            create_sheet=True,
+            read_sheet=True,
         )
 
         logger.info("Creating Agent with instructions length=%s", len(instructions))

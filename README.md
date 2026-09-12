@@ -36,6 +36,8 @@ export GOOGLE_SHEETS_CREDENTIALS=/path/to/credentials.json
    ```bash
    python -m venv .venv
    .\.venv\Scripts\activate
+
+   pip install -r requirements.txt  
    ```
 
 2. Install the project in editable mode:
