@@ -2,8 +2,10 @@
 
 import logging
 import os
-
+from finance_assistant.infrastructure.google_sheets.client import GoogleSheetsClient
+from finance_assistant.infrastructure.google_sheets.repositories import GoogleSheetsRepository
 from finance_assistant.config.settings import settings
+from agno.tools.google.sheets import GoogleSheetsTools
 
 logger = logging.getLogger(__name__)
 
@@ -14,7 +16,7 @@ except Exception:
     class Gemini:
         """Fallback Gemini model object used when Agno is unavailable."""
 
-        def __init__(self, id: str = "gemini-3.8-flash", api_key: str = ""):
+        def __init__(self, id: str = "gemini-2.5-flash", api_key: str = ""):
             self.id = id
             self.api_key = api_key
 
@@ -35,13 +37,9 @@ except Exception:
             return Response(f"Fallback agent reply for: {message}")
 
 
-try:
-    from finance_assistant.infrastructure.google_sheets.client import GoogleSheetsClient
-    from finance_assistant.infrastructure.google_sheets.repositories import GoogleSheetsRepository
-except Exception:
-    GoogleSheetsClient = None
-    GoogleSheetsRepository = None
-
+SAMPLE_SPREADSHEET_ID = "1jmkOtmjPNscHO91fQz4JC1XiSpn7reR8CzS34YUcPKM"
+SAMPLE_RANGE_NAME = "B2:E17"
+SHEETS_SCOPES = ["https://www.googleapis.com/auth/spreadsheets"]
 
 class BaseAgent:
     """Base abstraction for model-backed agents in the repo.
@@ -51,7 +49,7 @@ class BaseAgent:
     """
 
     def __init__(self, model_id: str | None = None, api_key: str | None = None):
-        self.model_id = model_id or getattr(settings, "gemini_model_id", "gemini-3.8-flash")
+        self.model_id = model_id or getattr(settings, "gemini_model_id", "gemini-2.5-flash")
         self.api_key = api_key or getattr(settings, "gemini_api_key", os.getenv("GEMINI_API_KEY", ""))
         logger.info("BaseAgent configured with model_id=%s", self.model_id)
         self.model = Gemini(id=self.model_id, api_key=self.api_key)
@@ -59,24 +57,13 @@ class BaseAgent:
 
     def _create_agent(self, instructions: str, **kwargs):
         """Create an Agno-style agent from a common model configuration."""
-        logger.info("Creating Agent with instructions length=%s", len(instructions))
-        return Agent(model=self.model, instructions=instructions, **kwargs)
-
-    def google_sheets_tool(self, spreadsheet_id: str | None = None,
-                            spreadsheet_range: str | None = None,
-                            credentials_path: str | None = None):
-        """Return an optional Google Sheets repository object behind a config guard.
-
-        The method is intentionally import-safe: if the optional library stack
-        is unavailable, it returns None rather than raising.
-        """
-        if GoogleSheetsRepository is None or GoogleSheetsClient is None:
-            logger.info("Google Sheets tool unavailable because the optional dependency stack is missing.")
-            return None
-
-        client = GoogleSheetsClient(
-            credentials_path=credentials_path or settings.google_sheets_credentials,
-            spreadsheet_id=spreadsheet_id,
-            spreadsheet_range=spreadsheet_range,
+        google_sheets_tool = GoogleSheetsTools(
+            spreadsheet_id=SAMPLE_SPREADSHEET_ID,
+            spreadsheet_range=SAMPLE_RANGE_NAME,
+            oauth_port=8080  # Porta usada para abrir o navegador e fazer a autenticação OAuth inicial
         )
-        return GoogleSheetsRepository(client)
+
+        logger.info("Creating Agent with instructions length=%s", len(instructions))
+        return Agent(tools=[google_sheets_tool], 
+        model=self.model, instructions=instructions, **kwargs)
+
