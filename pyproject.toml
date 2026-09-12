@@ -1,0 +1,8 @@
+[project]
+name = "finance-assistant"
+version = "0.1.0"
+description = "A Telegram-enabled finance assistant with MCP tools and Google Sheets integration."
+requires-python = ">=3.11"
+
+[tool.pytest.ini_options]
+testpaths = ["tests"]
