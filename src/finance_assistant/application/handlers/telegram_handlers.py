@@ -7,12 +7,16 @@ from telegram import Update
 from telegram.constants import ParseMode
 from telegram.ext import ContextTypes
 
+from finance_assistant.infrastructure.agents.prompts import FINANCE_ASSISTANT_PROMPT
 from finance_assistant.infrastructure.agents.response_agent import FinanceAgent
 
 
 logger = logging.getLogger(__name__)
 
-finance_agent = FinanceAgent()
+SAMPLE_SPREADSHEET_ID = "19HBfcD7gLrvMQFW9RWBezGqtvNh75acAICPevBJWAkY"
+instructions = FINANCE_ASSISTANT_PROMPT + ". You have access to a Google Sheet with the ID: " + SAMPLE_SPREADSHEET_ID + "."
+
+finance_agent = FinanceAgent(instructions=instructions)
 
 
 def handle_start(update: Update, context: ContextTypes.DEFAULT_TYPE) -> None:

@@ -35,7 +35,6 @@ except Exception:
             return Response(f"Fallback agent reply for: {message}")
 
 
-SAMPLE_SPREADSHEET_ID = "19HBfcD7gLrvMQFW9RWBezGqtvNh75acAICPevBJWAkY"
 SAMPLE_RANGE_NAME = "'Despesas'!B1:E"
 SHEETS_SCOPES = ["https://www.googleapis.com/auth/spreadsheets"]
 
@@ -56,7 +55,6 @@ class BaseAgent:
     def _create_agent(self, instructions: str, **kwargs):
         """Create an Agno-style agent from a common model configuration."""
         google_sheets_tool = GoogleSheetsTools(
-            spreadsheet_id=SAMPLE_SPREADSHEET_ID,
             spreadsheet_range=SAMPLE_RANGE_NAME,
             oauth_port=8080,
             scopes=SHEETS_SCOPES,
