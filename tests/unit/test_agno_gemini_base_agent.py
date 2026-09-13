@@ -1,7 +1,7 @@
 import importlib
 
-from finance_assistant.infrastructure.agent.base_agent import BaseAgent
-from finance_assistant.infrastructure.agent.response_agent import GeminiResponseAgent
+from finance_assistant.infrastructure.agents.base_agent import BaseAgent
+from finance_assistant.infrastructure.agents.response_agent import FinanceAgent
 from finance_assistant.infrastructure.config import settings as settings_module
 from finance_assistant.infrastructure.config.settings import settings
 
@@ -41,7 +41,7 @@ def test_base_agent_selects_gemini_flash_lite_model(monkeypatch):
 def test_gemini_response_agent_can_wrap_agent_run(monkeypatch):
     monkeypatch.setattr(settings, "gemini_api_key", "test-key", raising=False)
 
-    response_agent = GeminiResponseAgent(instructions="You answer finance questions.")
+    response_agent = FinanceAgent(instructions="You answer finance questions.")
 
     assert response_agent.agent is not None
     assert response_agent.agent.instructions == "You answer finance questions."

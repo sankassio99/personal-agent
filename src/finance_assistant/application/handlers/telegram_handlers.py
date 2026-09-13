@@ -5,13 +5,12 @@ import logging
 from telegram import Update
 from telegram.ext import ContextTypes
 
-from finance_assistant.infrastructure.agent.response_agent import GeminiResponseAgent
+from finance_assistant.infrastructure.agents.response_agent import FinanceAgent
 
 
 logger = logging.getLogger(__name__)
 
-STATIC_REPLY = "Hello from your Finance Assistant. I am ready to help you manage your finances."
-response_agent = GeminiResponseAgent()
+finance_agent = FinanceAgent()
 
 
 def handle_start(update: Update, context: ContextTypes.DEFAULT_TYPE) -> None:
@@ -21,9 +20,9 @@ def handle_start(update: Update, context: ContextTypes.DEFAULT_TYPE) -> None:
 
 
 async def handle_message(update: Update, context: ContextTypes.DEFAULT_TYPE) -> None:
-    """Handle incoming text messages and reply with the Gemini-backed response adapter."""
+    """Handle incoming text messages and reply with the FinanceAgent-backed response adapter."""
     msg = update.message.text or ""
     logger.info("Telegram message received for response processing: %s", msg)
-    reply = response_agent.respond(msg)
+    reply = finance_agent.respond(msg)
     logger.info("Generated reply will be sent back to Telegram: %s", reply)
     await update.message.reply_text(reply)
