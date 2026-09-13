@@ -16,10 +16,13 @@ logger = logging.getLogger(__name__)
 
 telegram_adapter_service = TelegramAdapterService()
 
-UNREGISTERED_USER_MESSAGE = (
-    "No spreadsheet is registered for your Telegram user. "
-    "Please contact the administrator to create the spreadsheet and register it in the system."
-)
+
+def build_unregistered_user_message(telegram_user_id: int | str | None) -> str:
+    """Return the friendly admin-contact fallback that mentions the unresolved Telegram user id."""
+    return (
+        f"No spreadsheet is registered for Telegram user {telegram_user_id}. "
+        "Please contact the administrator to create the spreadsheet and register it in the system."
+    )
 
 
 def build_instructions(spreadsheet_id: str | None = None) -> str:
@@ -49,7 +52,7 @@ async def handle_message(update: Update, context: ContextTypes.DEFAULT_TYPE) -> 
             "Telegram user %s has no spreadsheet mapping; sending admin-registration reply and stopping before FinanceAgent.",
             telegram_user_id,
         )
-        await update.message.reply_text(UNREGISTERED_USER_MESSAGE)
+        await update.message.reply_text(build_unregistered_user_message(telegram_user_id))
         return
 
     logger.info("Resolved Telegram user %s to spreadsheet %s", telegram_user_id, spreadsheet_id)
