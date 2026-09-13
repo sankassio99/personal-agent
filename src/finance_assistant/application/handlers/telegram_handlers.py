@@ -16,6 +16,11 @@ logger = logging.getLogger(__name__)
 
 telegram_adapter_service = TelegramAdapterService()
 
+UNREGISTERED_USER_MESSAGE = (
+    "No spreadsheet is registered for your Telegram user. "
+    "Please contact the administrator to create the spreadsheet and register it in the system."
+)
+
 
 def build_instructions(spreadsheet_id: str | None = None) -> str:
     """Build the FinanceAgent instructions payload using a spreadsheet id when available."""
@@ -39,10 +44,15 @@ async def handle_message(update: Update, context: ContextTypes.DEFAULT_TYPE) -> 
     telegram_user_id = getattr(user, "id", None)
     spreadsheet_id = telegram_adapter_service.resolve_spreadsheet_id(telegram_user_id)
 
-    if spreadsheet_id:
-        logger.info("Resolved Telegram user %s to spreadsheet %s", telegram_user_id, spreadsheet_id)
-    else:
-        logger.info("Telegram user %s has no spreadsheet mapping; falling back to unregistered user flow.", telegram_user_id)
+    if not spreadsheet_id:
+        logger.info(
+            "Telegram user %s has no spreadsheet mapping; sending admin-registration reply and stopping before FinanceAgent.",
+            telegram_user_id,
+        )
+        await update.message.reply_text(UNREGISTERED_USER_MESSAGE)
+        return
+
+    logger.info("Resolved Telegram user %s to spreadsheet %s", telegram_user_id, spreadsheet_id)
 
     finance_agent = FinanceAgent(instructions=build_instructions(spreadsheet_id))
     reply = finance_agent.respond(msg)

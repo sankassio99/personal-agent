@@ -1,4 +1,7 @@
+import asyncio
 import importlib
+from types import SimpleNamespace
+from unittest.mock import AsyncMock
 
 from finance_assistant.application.handlers.telegram_handlers import markdown_to_telegram_html
 from finance_assistant.application.services.telegram_adapter_service import TelegramAdapterService
@@ -69,10 +72,35 @@ def test_markdown_to_telegram_html_convert_bullet_points():
     assert " • Vodafone <i>(Comunicação)</i>: <b>€13.45</b>" in html
 
 
+def test_unknown_telegram_user_gets_registration_message_and_skips_agent(monkeypatch):
+    from finance_assistant.application.handlers import telegram_handlers as handlers
+
+    class DummyFinanceAgent:
+        def __init__(self, instructions=None):
+            raise AssertionError("FinanceAgent should not be constructed when no spreadsheet is registered")
+
+    reply_text = AsyncMock()
+    update = SimpleNamespace(
+        effective_user=SimpleNamespace(id=999999999),
+        message=SimpleNamespace(text="hello", reply_text=reply_text),
+    )
+
+    monkeypatch.setattr(handlers.telegram_adapter_service, "resolve_spreadsheet_id", lambda telegram_user_id: None)
+    monkeypatch.setattr(handlers, "FinanceAgent", DummyFinanceAgent)
+
+    asyncio.run(handlers.handle_message(update, None))
+
+    reply_text.assert_awaited_once()
+    sent_message = reply_text.await_args.args[0]
+    assert "administrator" in sent_message.lower()
+    assert "spreadsheet" in sent_message.lower()
+    assert "register" in sent_message.lower()
+
+
 def test_telegram_adapter_service_returns_spreadsheet_for_known_telegram_user():
     service = TelegramAdapterService()
 
-    spreadsheet_id = service.resolve_spreadsheet_id(123456789)
+    spreadsheet_id = service.resolve_spreadsheet_id(8910318803)
 
     assert spreadsheet_id == "19HBfcD7gLrvMQFW9RWBezGqtvNh75acAICPevBJWAkY"
 
