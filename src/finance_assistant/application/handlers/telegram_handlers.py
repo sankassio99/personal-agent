@@ -52,6 +52,17 @@ def build_instructions(spreadsheet_id: str | None = None) -> str:
     return FINANCE_ASSISTANT_PROMPT
 
 
+def build_help_message() -> str:
+    """Return a friendly command menu for the Telegram bot."""
+    return (
+        "📘 Comandos disponíveis:\n"
+        "• /start — inicia o cadastro e mostra a orientação de registro\n"
+        "• /summary — usa a faixa de planilha do resumo do usuário\n"
+        "• /recurring — usa a faixa de planilha recorrente do usuário\n"
+        "• /help — mostra esta lista de comandos"
+    )
+
+
 async def handle_start(update: Update, context: ContextTypes.DEFAULT_TYPE) -> None:
     """Handle the /start command with onboarding guidance for spreadsheet registration."""
     logger.info("Telegram /start command received.")
@@ -61,6 +72,12 @@ async def handle_start(update: Update, context: ContextTypes.DEFAULT_TYPE) -> No
     start_message = build_start_message(telegram_user_id)
 
     await update.message.reply_text(start_message)
+
+
+async def handle_help(update: Update, context: ContextTypes.DEFAULT_TYPE) -> None:
+    """Handle the /help command by returning the list of available Telegram commands."""
+    logger.info("Telegram /help command received.")
+    await update.message.reply_text(build_help_message())
 
 
 async def handle_summary(update: Update, context: ContextTypes.DEFAULT_TYPE) -> None:
