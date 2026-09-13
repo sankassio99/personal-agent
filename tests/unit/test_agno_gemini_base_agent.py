@@ -46,3 +46,8 @@ def test_markdown_to_telegram_html_converts_to_bold():
     html = markdown_to_telegram_html("Hello **world**")
 
     assert "Hello <b>world</b>" in html
+
+def test_markdown_to_telegram_html_converts_to_italic():
+    html = markdown_to_telegram_html("Hello *world*")
+
+    assert "Hello <i>world</i>" in html
