@@ -14,6 +14,7 @@ class TelegramAdapterService:
     def __init__(self, mapping: dict[int | str, str] | None = None):
         self.user_to_spreadsheet_map = mapping or {
             8910318803: "19HBfcD7gLrvMQFW9RWBezGqtvNh75acAICPevBJWAkY",
+            5881962910: "1tXN6W9CG57a6aFIWaR9qjo53VBWGYeNd2Sl8Gz9JoLA",
         }
 
     def resolve_spreadsheet_id(self, telegram_user_id: int | str | None) -> str | None:
