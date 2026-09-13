@@ -81,6 +81,33 @@ def test_markdown_to_telegram_html_convert_bullet_points():
     assert " • Vodafone <i>(Comunicação)</i>: <b>€13.45</b>" in html
 
 
+def test_base_agent_create_agent_accepts_spreadsheet_range_override(monkeypatch):
+    import finance_assistant.infrastructure.agents.base_agent as base_agent_module
+
+    captured = {}
+
+    class DummyGoogleSheetsTools:
+        def __init__(self, **kwargs):
+            captured.update(kwargs)
+
+    class DummyAgent:
+        def __init__(self, tools=None, model=None, instructions="", **kwargs):
+            self.tools = tools
+            self.model = model
+            self.instructions = instructions
+            self.kwargs = kwargs
+
+    monkeypatch.setattr(base_agent_module, "GoogleSheetsTools", DummyGoogleSheetsTools)
+    monkeypatch.setattr(base_agent_module, "Agent", DummyAgent)
+
+    base = BaseAgent.__new__(BaseAgent)
+    base.model = object()
+
+    base._create_agent("You answer finance questions.", spreadsheet_range="'Sumário'!B27:F42")
+
+    assert captured["spreadsheet_range"] == "'Sumário'!B27:F42"
+
+
 def test_unknown_telegram_user_gets_registration_message_and_skips_agent(monkeypatch):
     from finance_assistant.application.handlers import telegram_handlers as handlers
 

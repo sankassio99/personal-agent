@@ -11,11 +11,11 @@ logger = logging.getLogger(__name__)
 class FinanceAgent(BaseAgent):
     """Response adapter that builds a message-oriented agent around Gemini."""
 
-    def __init__(self, instructions: str = FINANCE_ASSISTANT_PROMPT, **kwargs):
-        super().__init__(**kwargs)
+    def __init__(self, instructions: str = FINANCE_ASSISTANT_PROMPT, spreadsheet_range: str | None = None, **kwargs):
+        super().__init__(spreadsheet_range=spreadsheet_range, **kwargs)
         logger.info("FinanceAgent starting initialization.")
 
-        self.agent = self._create_agent(instructions=instructions)
+        self.agent = self._create_agent(instructions=instructions, spreadsheet_range=self.spreadsheet_range)
 
         logger.info("FinanceAgent ready with configured instructions.")
 

@@ -36,6 +36,7 @@ except Exception:
 
 
 SAMPLE_RANGE_NAME = "'Despesas'!B1:E"
+SUMMARY_RANGE_NAME = "'Sumário'!B27:F42"
 SHEETS_SCOPES = ["https://www.googleapis.com/auth/spreadsheets"]
 
 class BaseAgent:
@@ -45,17 +46,19 @@ class BaseAgent:
     compatible with the current finance assistant package structure.
     """
 
-    def __init__(self, model_id: str | None = None, api_key: str | None = None):
+    def __init__(self, model_id: str | None = None, api_key: str | None = None, spreadsheet_range: str | None = None):
         self.model_id = model_id or getattr(settings, "gemini_model_id", "gemini-2.5-flash-lite")
         self.api_key = api_key or getattr(settings, "gemini_api_key", os.getenv("GEMINI_API_KEY", ""))
+        self.spreadsheet_range = spreadsheet_range or SAMPLE_RANGE_NAME
         logger.info("BaseAgent configured with model_id=%s", self.model_id)
         self.model = Gemini(id=self.model_id, api_key=self.api_key)
         logger.info("BaseAgent attached Gemini model object for response flow.")
 
-    def _create_agent(self, instructions: str, **kwargs):
+    def _create_agent(self, instructions: str, spreadsheet_range: str | None = None, **kwargs):
         """Create an Agno-style agent from a common model configuration."""
+        range_to_use = spreadsheet_range or self.spreadsheet_range or SAMPLE_RANGE_NAME
         google_sheets_tool = GoogleSheetsTools(
-            spreadsheet_range=SAMPLE_RANGE_NAME,
+            spreadsheet_range=range_to_use,
             oauth_port=8080,
             scopes=SHEETS_SCOPES,
             update_sheet=True,
@@ -64,6 +67,5 @@ class BaseAgent:
         )
 
         logger.info("Creating Agent with instructions length=%s", len(instructions))
-        return Agent(tools=[google_sheets_tool], 
-        model=self.model, instructions=instructions, **kwargs)
+        return Agent(tools=[google_sheets_tool], model=self.model, instructions=instructions, **kwargs)
 

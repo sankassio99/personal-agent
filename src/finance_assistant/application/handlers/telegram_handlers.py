@@ -15,7 +15,8 @@ from finance_assistant.infrastructure.agents.response_agent import FinanceAgent
 logger = logging.getLogger(__name__)
 
 telegram_adapter_service = TelegramAdapterService()
-
+SUMMARY_SPREADSHEET_RANGE = "'Sumário'!B27:F42"
+EXPENSES_RANGE_NAME = "'Despesas'!B1:E"
 
 def build_start_message(telegram_user_id: int | str | None = None) -> str:
     """Return the Telegram start-command onboarding message with admin contact guidance."""
@@ -61,11 +62,22 @@ async def handle_start(update: Update, context: ContextTypes.DEFAULT_TYPE) -> No
     await update.message.reply_text(start_message)
 
 
+async def handle_summary(update: Update, context: ContextTypes.DEFAULT_TYPE) -> None:
+    """Handle the /summary command by routing through the summary spreadsheet range."""
+    logger.info("Telegram /summary command received.")
+    msg = update.message.text or ""
+    await _dispatch_finance_reply(update, msg, SUMMARY_SPREADSHEET_RANGE)
+
+
 async def handle_message(update: Update, context: ContextTypes.DEFAULT_TYPE) -> None:
     """Handle incoming text messages and reply with the FinanceAgent-backed response adapter."""
     msg = update.message.text or ""
     logger.info("Telegram message received for response processing: %s", msg)
+    await _dispatch_finance_reply(update, msg, EXPENSES_RANGE_NAME)
 
+
+async def _dispatch_finance_reply(update: Update, message_text: str, spreadsheet_range: str) -> None:
+    """Centralize the registration check and finance-agent execution for normal and command replies."""
     user = update.effective_user or update.message.from_user
     telegram_user_id = getattr(user, "id", None)
     spreadsheet_id = telegram_adapter_service.resolve_spreadsheet_id(telegram_user_id)
@@ -80,8 +92,11 @@ async def handle_message(update: Update, context: ContextTypes.DEFAULT_TYPE) -> 
 
     logger.info("Resolved Telegram user %s to spreadsheet %s", telegram_user_id, spreadsheet_id)
 
-    finance_agent = FinanceAgent(instructions=build_instructions(spreadsheet_id))
-    reply = finance_agent.respond(msg)
+    finance_agent = FinanceAgent(
+        instructions=build_instructions(spreadsheet_id),
+        spreadsheet_range=spreadsheet_range,
+    )
+    reply = finance_agent.respond(message_text)
     reply_html = markdown_to_telegram_html(reply)
     logger.info("Generated reply will be sent back to Telegram as HTML: %s", reply_html)
     await update.message.reply_text(reply_html, parse_mode=ParseMode.HTML)
