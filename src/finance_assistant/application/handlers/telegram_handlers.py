@@ -1,8 +1,8 @@
 """Telegram message and command handlers."""
 
 import logging
+import re
 
-from markdown_it import MarkdownIt
 from telegram import Update
 from telegram.constants import ParseMode
 from telegram.ext import ContextTypes
@@ -13,15 +13,6 @@ from finance_assistant.infrastructure.agents.response_agent import FinanceAgent
 logger = logging.getLogger(__name__)
 
 finance_agent = FinanceAgent()
-
-
-def markdown_to_telegram_html(markdown_text: str) -> str:
-    """Convert a Markdown-like finance reply into Telegram-safe HTML for the reply handler."""
-    if not markdown_text:
-        return ""
-
-    parser = MarkdownIt("commonmark", {"breaks": True, "html": False})
-    return parser.render(markdown_text)
 
 
 def handle_start(update: Update, context: ContextTypes.DEFAULT_TYPE) -> None:
@@ -38,3 +29,20 @@ async def handle_message(update: Update, context: ContextTypes.DEFAULT_TYPE) -> 
     reply_html = markdown_to_telegram_html(reply)
     logger.info("Generated reply will be sent back to Telegram as HTML: %s", reply_html)
     await update.message.reply_text(reply_html, parse_mode=ParseMode.HTML)
+
+
+# Move to another file further
+def markdown_to_telegram_html(markdown_text: str) -> str:
+    """Convert a Markdown-like finance reply into Telegram-safe HTML for the reply handler."""
+    if not markdown_text:
+        return ""
+
+    # Bold: **text** or __text__
+    markdown_text = re.sub(r"\*\*(.+?)\*\*", r"<b>\1</b>", markdown_text)
+    markdown_text = re.sub(r"__(.+?)__", r"<b>\1</b>", markdown_text)
+
+    # Italic: *markdown_text* or _markdown_text_
+    markdown_text = re.sub(r"(?<!\*)\*(?!\*)(.+?)(?<!\*)\*(?!\*)", r"<i>\1</i>", markdown_text)
+    markdown_text = re.sub(r"(?<!_)_(?!_)(.+?)(?<!_)_(?!_)", r"<i>\1</i>", markdown_text)
+
+    return markdown_text

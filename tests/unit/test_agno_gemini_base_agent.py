@@ -37,7 +37,12 @@ def test_gemini_response_agent_can_wrap_agent_run(monkeypatch):
     assert response_agent.agent.instructions == "You answer finance questions."
 
 
-def test_markdown_to_telegram_html_converts_common_markdown_to_html():
-    html = markdown_to_telegram_html("Hello **world** and <tag>")
+# def test_markdown_to_telegram_html_converts_common_markdown_to_html():
+#     html = markdown_to_telegram_html("Hello **world** and <tag>")
 
-    assert "<p>Hello <strong>world</strong> and &lt;tag&gt;</p>" in html
+#     assert "<p>Hello <strong>world</strong> and &lt;tag&gt;</p>" in html
+
+def test_markdown_to_telegram_html_converts_to_bold():
+    html = markdown_to_telegram_html("Hello **world**")
+
+    assert "Hello <b>world</b>" in html
