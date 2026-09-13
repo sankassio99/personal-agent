@@ -1,6 +1,7 @@
 import importlib
 
 from finance_assistant.application.handlers.telegram_handlers import markdown_to_telegram_html
+from finance_assistant.application.services.telegram_adapter_service import TelegramAdapterService
 from finance_assistant.infrastructure.agents.base_agent import BaseAgent
 from finance_assistant.infrastructure.agents.response_agent import FinanceAgent
 from finance_assistant.infrastructure.config import settings as settings_module
@@ -66,3 +67,19 @@ def test_markdown_to_telegram_html_convert_bullet_points():
     html = markdown_to_telegram_html("* Vodafone *(Comunicação)*: **€13.45**")
 
     assert " • Vodafone <i>(Comunicação)</i>: <b>€13.45</b>" in html
+
+
+def test_telegram_adapter_service_returns_spreadsheet_for_known_telegram_user():
+    service = TelegramAdapterService()
+
+    spreadsheet_id = service.resolve_spreadsheet_id(123456789)
+
+    assert spreadsheet_id == "19HBfcD7gLrvMQFW9RWBezGqtvNh75acAICPevBJWAkY"
+
+
+def test_telegram_adapter_service_degrades_safely_for_unknown_telegram_user():
+    service = TelegramAdapterService()
+
+    spreadsheet_id = service.resolve_spreadsheet_id(999999999)
+
+    assert spreadsheet_id is None

@@ -7,16 +7,21 @@ from telegram import Update
 from telegram.constants import ParseMode
 from telegram.ext import ContextTypes
 
+from finance_assistant.application.services.telegram_adapter_service import TelegramAdapterService
 from finance_assistant.infrastructure.agents.prompts import FINANCE_ASSISTANT_PROMPT
 from finance_assistant.infrastructure.agents.response_agent import FinanceAgent
 
 
 logger = logging.getLogger(__name__)
 
-SAMPLE_SPREADSHEET_ID = "19HBfcD7gLrvMQFW9RWBezGqtvNh75acAICPevBJWAkY"
-instructions = FINANCE_ASSISTANT_PROMPT + ". You have access to a Google Sheet with the ID: " + SAMPLE_SPREADSHEET_ID + "."
+telegram_adapter_service = TelegramAdapterService()
 
-finance_agent = FinanceAgent(instructions=instructions)
+
+def build_instructions(spreadsheet_id: str | None = None) -> str:
+    """Build the FinanceAgent instructions payload using a spreadsheet id when available."""
+    if spreadsheet_id:
+        return FINANCE_ASSISTANT_PROMPT + ". You have access to a Google Sheet with the ID: " + spreadsheet_id + "."
+    return FINANCE_ASSISTANT_PROMPT
 
 
 def handle_start(update: Update, context: ContextTypes.DEFAULT_TYPE) -> None:
@@ -29,6 +34,17 @@ async def handle_message(update: Update, context: ContextTypes.DEFAULT_TYPE) -> 
     """Handle incoming text messages and reply with the FinanceAgent-backed response adapter."""
     msg = update.message.text or ""
     logger.info("Telegram message received for response processing: %s", msg)
+
+    user = update.effective_user or update.message.from_user
+    telegram_user_id = getattr(user, "id", None)
+    spreadsheet_id = telegram_adapter_service.resolve_spreadsheet_id(telegram_user_id)
+
+    if spreadsheet_id:
+        logger.info("Resolved Telegram user %s to spreadsheet %s", telegram_user_id, spreadsheet_id)
+    else:
+        logger.info("Telegram user %s has no spreadsheet mapping; falling back to unregistered user flow.", telegram_user_id)
+
+    finance_agent = FinanceAgent(instructions=build_instructions(spreadsheet_id))
     reply = finance_agent.respond(msg)
     reply_html = markdown_to_telegram_html(reply)
     logger.info("Generated reply will be sent back to Telegram as HTML: %s", reply_html)
