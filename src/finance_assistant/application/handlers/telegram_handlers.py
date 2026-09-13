@@ -45,4 +45,7 @@ def markdown_to_telegram_html(markdown_text: str) -> str:
     markdown_text = re.sub(r"(?<!\*)\*(?!\*)(.+?)(?<!\*)\*(?!\*)", r"<i>\1</i>", markdown_text)
     markdown_text = re.sub(r"(?<!_)_(?!_)(.+?)(?<!_)_(?!_)", r"<i>\1</i>", markdown_text)
 
+    # Remove hashtags, including groups like ###word and ##otherword
+    markdown_text = re.sub(r"(?<!\w)#+([^\s#]+)", r"\1", markdown_text)
+
     return markdown_text

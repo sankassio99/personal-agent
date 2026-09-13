@@ -51,3 +51,13 @@ def test_markdown_to_telegram_html_converts_to_italic():
     html = markdown_to_telegram_html("Hello *world*")
 
     assert "Hello <i>world</i>" in html
+
+def test_markdown_to_telegram_html_remove_hashtags():
+    html = markdown_to_telegram_html("Hello #world")
+
+    assert "Hello world" in html
+
+def test_markdown_to_telegram_html_remove_multiple_hashtags():
+    html = markdown_to_telegram_html("Hello ###world ##universe")
+
+    assert "Hello world universe" in html
