@@ -3,7 +3,7 @@ import importlib
 from types import SimpleNamespace
 from unittest.mock import AsyncMock
 
-from finance_assistant.application.handlers.telegram_handlers import markdown_to_telegram_html
+from finance_assistant.application.handlers.telegram_handlers import build_start_message, markdown_to_telegram_html
 from finance_assistant.application.services.telegram_adapter_service import TelegramAdapterService
 from finance_assistant.infrastructure.agents.base_agent import BaseAgent
 from finance_assistant.infrastructure.agents.response_agent import FinanceAgent
@@ -65,6 +65,15 @@ def test_markdown_to_telegram_html_remove_multiple_hashtags():
     html = markdown_to_telegram_html("Hello ###world ##universe")
 
     assert "Hello world universe" in html
+
+def test_build_start_message_includes_invoice_registration_guidance():
+    message = build_start_message(123456789)
+
+    assert "@kassiodev" in message
+    assert "telegram user id" in message.lower()
+    assert "email address" in message.lower()
+    assert "Google Sheets" in message
+
 
 def test_markdown_to_telegram_html_convert_bullet_points():
     html = markdown_to_telegram_html("* Vodafone *(Comunicação)*: **€13.45**")

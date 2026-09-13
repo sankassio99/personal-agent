@@ -17,14 +17,26 @@ logger = logging.getLogger(__name__)
 telegram_adapter_service = TelegramAdapterService()
 
 
+def build_start_message(telegram_user_id: int | str | None = None) -> str:
+    """Return the Telegram start-command onboarding message with admin contact guidance."""
+    if telegram_user_id is None:
+        return (
+            "👋 Welcome! Please contact the administrator @kassiodev to create the spreadsheet "
+            "and register it in the system. Send your Telegram user id and your email address "
+            "so the spreadsheet can be created on Google Sheets."
+        )
+
+    return (
+        f"👋 Welcome! 📄 No spreadsheet is registered for Telegram user {telegram_user_id}. "
+        "Please contact the administrator @kassiodev to create the spreadsheet "
+        "and register it in the system. Send your Telegram user id and your email address "
+        "so the spreadsheet can be created on Google Sheets."
+    )
+
+
 def build_unregistered_user_message(telegram_user_id: int | str | None) -> str:
     """Return the friendly admin-contact fallback that mentions the unresolved Telegram user id."""
-    return (
-        f"📄 No spreadsheet is registered for Telegram user {telegram_user_id}. "
-        "👋 Please contact the administrator @kassiodev to create the spreadsheet "
-        "and register it in the system. "
-        "Send your Telegram user id and your email address so the spreadsheet can be created on Google Sheets."
-    )
+    return build_start_message(telegram_user_id)
 
 
 def build_instructions(spreadsheet_id: str | None = None) -> str:
@@ -34,10 +46,15 @@ def build_instructions(spreadsheet_id: str | None = None) -> str:
     return FINANCE_ASSISTANT_PROMPT
 
 
-def handle_start(update: Update, context: ContextTypes.DEFAULT_TYPE) -> None:
-    """Handle the /start command."""
+async def handle_start(update: Update, context: ContextTypes.DEFAULT_TYPE) -> None:
+    """Handle the /start command with onboarding guidance for spreadsheet registration."""
     logger.info("Telegram /start command received.")
-    update.message.reply_text("Starting")
+
+    user = update.effective_user or update.message.from_user
+    telegram_user_id = getattr(user, "id", None)
+    start_message = build_start_message(telegram_user_id)
+
+    await update.message.reply_text(start_message)
 
 
 async def handle_message(update: Update, context: ContextTypes.DEFAULT_TYPE) -> None:
