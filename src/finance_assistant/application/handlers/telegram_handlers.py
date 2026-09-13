@@ -17,6 +17,7 @@ logger = logging.getLogger(__name__)
 telegram_adapter_service = TelegramAdapterService()
 SUMMARY_SPREADSHEET_RANGE = "'Sumário'!B27:F42"
 EXPENSES_RANGE_NAME = "'Despesas'!B1:E"
+RECURRING_SPREADSHEET_RANGE = "'Recorrentes'!A1:E50"
 
 def build_start_message(telegram_user_id: int | str | None = None) -> str:
     """Return the Telegram start-command onboarding message with admin contact guidance."""
@@ -67,6 +68,13 @@ async def handle_summary(update: Update, context: ContextTypes.DEFAULT_TYPE) -> 
     logger.info("Telegram /summary command received.")
     msg = update.message.text or ""
     await _dispatch_finance_reply(update, msg, SUMMARY_SPREADSHEET_RANGE)
+
+
+async def handle_recurring(update: Update, context: ContextTypes.DEFAULT_TYPE) -> None:
+    """Handle the /recurring command by routing through the recurring spreadsheet range."""
+    logger.info("Telegram /recurring command received.")
+    msg = update.message.text or ""
+    await _dispatch_finance_reply(update, msg, RECURRING_SPREADSHEET_RANGE)
 
 
 async def handle_message(update: Update, context: ContextTypes.DEFAULT_TYPE) -> None:

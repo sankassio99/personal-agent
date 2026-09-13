@@ -2,7 +2,12 @@
 
 from telegram.ext import ApplicationBuilder, CommandHandler, MessageHandler, filters
 
-from finance_assistant.application.handlers.telegram_handlers import handle_message, handle_start, handle_summary
+from finance_assistant.application.handlers.telegram_handlers import (
+    handle_message,
+    handle_recurring,
+    handle_start,
+    handle_summary,
+)
 from finance_assistant.infrastructure.config.settings import settings
 
 
@@ -14,5 +19,6 @@ def run_bot() -> None:
     app = ApplicationBuilder().token(settings.telegram_token).build()
     app.add_handler(CommandHandler("start", handle_start))
     app.add_handler(CommandHandler("summary", handle_summary))
+    app.add_handler(CommandHandler("recurring", handle_recurring))
     app.add_handler(MessageHandler(filters.TEXT & ~filters.COMMAND, handle_message))
     app.run_polling()

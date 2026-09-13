@@ -108,6 +108,34 @@ def test_base_agent_create_agent_accepts_spreadsheet_range_override(monkeypatch)
     assert captured["spreadsheet_range"] == "'Sumário'!B27:F42"
 
 
+def test_handle_recurring_forwards_recurring_range_override(monkeypatch):
+    from finance_assistant.application.handlers import telegram_handlers as handlers
+
+    captured = {}
+
+    class DummyFinanceAgent:
+        def __init__(self, instructions=None, spreadsheet_range=None):
+            captured["instructions"] = instructions
+            captured["spreadsheet_range"] = spreadsheet_range
+
+        def respond(self, message):
+            return "ok"
+
+    reply_text = AsyncMock()
+    update = SimpleNamespace(
+        effective_user=SimpleNamespace(id=123456789),
+        message=SimpleNamespace(text="/recurring", reply_text=reply_text),
+    )
+
+    monkeypatch.setattr(handlers.telegram_adapter_service, "resolve_spreadsheet_id", lambda telegram_user_id: "sheet-id")
+    monkeypatch.setattr(handlers, "FinanceAgent", DummyFinanceAgent)
+
+    asyncio.run(handlers.handle_recurring(update, None))
+
+    assert captured["spreadsheet_range"] == handlers.RECURRING_SPREADSHEET_RANGE
+    assert captured["instructions"] == handlers.build_instructions("sheet-id")
+
+
 def test_unknown_telegram_user_gets_registration_message_and_skips_agent(monkeypatch):
     from finance_assistant.application.handlers import telegram_handlers as handlers
 
