@@ -62,6 +62,18 @@ export GOOGLE_SHEETS_CREDENTIALS=/path/to/credentials.json
 
 The package exposes a minimal Telegram bot entrypoint and MCP/server scaffolding that can be expanded in later development steps.
 
+## Running tests
+
+Install the project in editable mode, install the dependency requirements, then run the unit tests with Python directly:
+
+```bash
+python -m pip install -e .
+python -m pip install -r requirements.txt
+python -m pytest -q tests/unit/test_agno_gemini_base_agent.py --import-mode=importlib
+```
+
+This project uses a `src/` layout, so the import-mode flag avoids test collection issues when the repository is not installed into the active interpreter.
+
 # VPS instructions
 This happens because you are starting the application from within the shell session. When you close the SSH window, Linux ends that session and may send a signal (`SIGHUP`) to the processes attached to it — so your bot also stops.
 
