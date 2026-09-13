@@ -7,3 +7,5 @@ google-auth-httplib2
 google-auth-oauthlib
 openai
 markdown-it-py
+pytest
+beautifulsoup4
