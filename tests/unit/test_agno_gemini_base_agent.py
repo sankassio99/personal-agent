@@ -70,8 +70,8 @@ def test_build_start_message_includes_invoice_registration_guidance():
     message = build_start_message(123456789)
 
     assert "@kassiodev" in message
-    assert "telegram user id" in message.lower()
-    assert "email address" in message.lower()
+    assert "id do telegram" in message.lower()
+    assert "e-mail" in message.lower()
     assert "Google Sheets" in message
 
 
@@ -101,9 +101,9 @@ def test_unknown_telegram_user_gets_registration_message_and_skips_agent(monkeyp
 
     reply_text.assert_awaited_once()
     sent_message = reply_text.await_args.args[0]
-    assert "administrator" in sent_message.lower()
-    assert "spreadsheet" in sent_message.lower()
-    assert "register" in sent_message.lower()
+    assert "administrador" in sent_message.lower()
+    assert "planilha" in sent_message.lower()
+    assert "cadastro" in sent_message.lower()
 
 
 def test_telegram_adapter_service_returns_spreadsheet_for_known_telegram_user():

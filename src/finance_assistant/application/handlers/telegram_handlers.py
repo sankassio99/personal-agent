@@ -21,16 +21,20 @@ def build_start_message(telegram_user_id: int | str | None = None) -> str:
     """Return the Telegram start-command onboarding message with admin contact guidance."""
     if telegram_user_id is None:
         return (
-            "👋 Welcome! Please contact the administrator @kassiodev to create the spreadsheet "
-            "and register it in the system. Send your Telegram user id and your email address "
-            "so the spreadsheet can be created on Google Sheets."
+            "👋 Bem-vindo(a) ao Finance Assistant!\n\n"
+            "Para começar, siga estes passos:\n"
+            "• Entre em contato com o administrador @kassiodev\n"
+            "• Envie seu ID do Telegram e seu e-mail\n"
+            "• O administrador criará a planilha no Google Sheets e fará o cadastro no sistema."
         )
 
     return (
-        f"👋 Welcome! 📄 No spreadsheet is registered for Telegram user {telegram_user_id}. "
-        "Please contact the administrator @kassiodev to create the spreadsheet "
-        "and register it in the system. Send your Telegram user id and your email address "
-        "so the spreadsheet can be created on Google Sheets."
+        f"👋 Bem-vindo(a) ao Finance Assistant!\n\n"
+        f"📄 Ainda não há uma planilha cadastrada para o usuário do Telegram {telegram_user_id}.\n\n"
+        "Para continuar, siga estes passos:\n"
+        "• Entre em contato com o administrador @kassiodev\n"
+        "• Envie seu ID do Telegram e seu e-mail\n"
+        "• O administrador criará a planilha no Google Sheets e fará o cadastro no sistema."
     )
 
 
