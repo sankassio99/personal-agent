@@ -20,8 +20,10 @@ telegram_adapter_service = TelegramAdapterService()
 def build_unregistered_user_message(telegram_user_id: int | str | None) -> str:
     """Return the friendly admin-contact fallback that mentions the unresolved Telegram user id."""
     return (
-        f"No spreadsheet is registered for Telegram user {telegram_user_id}. "
-        "Please contact the administrator to create the spreadsheet and register it in the system."
+        f"📄 No spreadsheet is registered for Telegram user {telegram_user_id}. "
+        "👋 Please contact the administrator @kassiodev to create the spreadsheet "
+        "and register it in the system. "
+        "Send your Telegram user id and your email address so the spreadsheet can be created on Google Sheets."
     )
 
 
