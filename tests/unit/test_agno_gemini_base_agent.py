@@ -61,3 +61,8 @@ def test_markdown_to_telegram_html_remove_multiple_hashtags():
     html = markdown_to_telegram_html("Hello ###world ##universe")
 
     assert "Hello world universe" in html
+
+def test_markdown_to_telegram_html_convert_bullet_points():
+    html = markdown_to_telegram_html("* Vodafone *(Comunicação)*: **€13.45**")
+
+    assert " • Vodafone <i>(Comunicação)</i>: <b>€13.45</b>" in html
