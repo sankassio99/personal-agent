@@ -2,9 +2,7 @@
 
 import logging
 import os
-from finance_assistant.infrastructure.google_sheets.client import GoogleSheetsClient
-from finance_assistant.infrastructure.google_sheets.repositories import GoogleSheetsRepository
-from finance_assistant.config.settings import settings
+from finance_assistant.infrastructure.config.settings import settings
 from agno.tools.google.sheets import GoogleSheetsTools
 
 logger = logging.getLogger(__name__)

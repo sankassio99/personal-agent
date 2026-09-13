@@ -1,6 +1,7 @@
 """Main application entrypoint."""
-from finance_assistant.telegram.bot import run_bot
 import logging
+
+from finance_assistant.adapters.telegram.bot import run_bot
 
 logging.basicConfig(level=logging.INFO)
 

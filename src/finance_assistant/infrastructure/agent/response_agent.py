@@ -2,7 +2,7 @@
 
 import logging
 
-from finance_assistant.agent.base_agent import BaseAgent
+from finance_assistant.infrastructure.agent.base_agent import BaseAgent
 
 logger = logging.getLogger(__name__)
 

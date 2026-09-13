@@ -5,7 +5,7 @@ import logging
 from telegram import Update
 from telegram.ext import ContextTypes
 
-from finance_assistant.agent.response_agent import GeminiResponseAgent
+from finance_assistant.infrastructure.agent.response_agent import GeminiResponseAgent
 
 
 logger = logging.getLogger(__name__)

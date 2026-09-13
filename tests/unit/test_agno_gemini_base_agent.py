@@ -1,9 +1,9 @@
 import importlib
 
-from finance_assistant.agent.base_agent import BaseAgent
-from finance_assistant.agent.response_agent import GeminiResponseAgent
-from finance_assistant.config import settings as settings_module
-from finance_assistant.config.settings import settings
+from finance_assistant.infrastructure.agent.base_agent import BaseAgent
+from finance_assistant.infrastructure.agent.response_agent import GeminiResponseAgent
+from finance_assistant.infrastructure.config import settings as settings_module
+from finance_assistant.infrastructure.config.settings import settings
 
 
 def test_google_environment_settings_are_exposed_in_settings_surface(monkeypatch):

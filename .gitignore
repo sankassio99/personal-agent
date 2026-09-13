@@ -6,3 +6,4 @@ __pycache__/
 src/finance_assistant.egg-info
 .vscode/mcp.json
 auth
+token.json

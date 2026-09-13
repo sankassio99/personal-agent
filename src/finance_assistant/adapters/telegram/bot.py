@@ -2,8 +2,8 @@
 
 from telegram.ext import ApplicationBuilder, MessageHandler, filters
 
-from finance_assistant.config.settings import settings
-from finance_assistant.telegram.handlers import handle_message
+from finance_assistant.application.handlers.telegram_handlers import handle_message
+from finance_assistant.infrastructure.config.settings import settings
 
 
 def run_bot() -> None:
