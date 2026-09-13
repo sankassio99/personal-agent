@@ -45,11 +45,17 @@ def build_unregistered_user_message(telegram_user_id: int | str | None) -> str:
     return build_start_message(telegram_user_id)
 
 
-def build_instructions(spreadsheet_id: str | None = None) -> str:
-    """Build the FinanceAgent instructions payload using a spreadsheet id when available."""
+def build_instructions(spreadsheet_id: str | None = None, spreadsheet_range: str | None = None) -> str:
+    """Build the FinanceAgent instructions payload using a spreadsheet id and range when available."""
+    instructions = FINANCE_ASSISTANT_PROMPT
+
     if spreadsheet_id:
-        return FINANCE_ASSISTANT_PROMPT + ". You have access to a Google Sheet with the ID: " + spreadsheet_id + "."
-    return FINANCE_ASSISTANT_PROMPT
+        instructions += ". You have access to a Google Sheet with the ID: " + spreadsheet_id + "."
+
+    if spreadsheet_range:
+        instructions += " The active spreadsheet range is: " + spreadsheet_range + "."
+
+    return instructions
 
 
 def build_help_message() -> str:
@@ -115,10 +121,10 @@ async def _dispatch_finance_reply(update: Update, message_text: str, spreadsheet
         await update.message.reply_text(build_unregistered_user_message(telegram_user_id))
         return
 
-    logger.info("Resolved Telegram user %s to spreadsheet %s", telegram_user_id, spreadsheet_id)
+    logger.info("Resolved Telegram user %s to spreadsheet %s to range %s", telegram_user_id, spreadsheet_id, spreadsheet_range)
 
     finance_agent = FinanceAgent(
-        instructions=build_instructions(spreadsheet_id),
+        instructions=build_instructions(spreadsheet_id, spreadsheet_range),
         spreadsheet_range=spreadsheet_range,
     )
     reply = finance_agent.respond(message_text)

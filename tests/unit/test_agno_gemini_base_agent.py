@@ -81,6 +81,15 @@ def test_markdown_to_telegram_html_convert_bullet_points():
     assert " • Vodafone <i>(Comunicação)</i>: <b>€13.45</b>" in html
 
 
+def test_build_instructions_include_spreadsheet_id_and_range():
+    from finance_assistant.application.handlers import telegram_handlers as handlers
+
+    prompt = handlers.build_instructions("sheet-id", "'Recorrentes'!A1:E50")
+
+    assert "sheet-id" in prompt
+    assert "'Recorrentes'!A1:E50" in prompt
+
+
 def test_base_agent_create_agent_accepts_spreadsheet_range_override(monkeypatch):
     import finance_assistant.infrastructure.agents.base_agent as base_agent_module
 
@@ -133,7 +142,7 @@ def test_handle_recurring_forwards_recurring_range_override(monkeypatch):
     asyncio.run(handlers.handle_recurring(update, None))
 
     assert captured["spreadsheet_range"] == handlers.RECURRING_SPREADSHEET_RANGE
-    assert captured["instructions"] == handlers.build_instructions("sheet-id")
+    assert captured["instructions"] == handlers.build_instructions("sheet-id", handlers.RECURRING_SPREADSHEET_RANGE)
 
 
 def test_unknown_telegram_user_gets_registration_message_and_skips_agent(monkeypatch):
