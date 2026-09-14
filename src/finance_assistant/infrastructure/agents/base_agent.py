@@ -2,8 +2,11 @@
 
 import logging
 import os
+
 from finance_assistant.infrastructure.config.settings import settings
 from agno.tools.google.sheets import GoogleSheetsTools
+
+from finance_assistant.infrastructure.agents.add_expense_tool import add_expense
 
 logger = logging.getLogger(__name__)
 
@@ -39,6 +42,7 @@ SAMPLE_RANGE_NAME = "'Despesas'!B1:E"
 SUMMARY_RANGE_NAME = "'Sumário'!B27:F42"
 SHEETS_SCOPES = ["https://www.googleapis.com/auth/spreadsheets"]
 
+
 class BaseAgent:
     """Base abstraction for model-backed agents in the repo.
 
@@ -67,5 +71,5 @@ class BaseAgent:
         )
 
         logger.info("Creating Agent with instructions length=%s", len(instructions))
-        return Agent(tools=[google_sheets_tool], model=self.model, instructions=instructions, **kwargs)
+        return Agent(tools=[add_expense], model=self.model, instructions=instructions, **kwargs)
 

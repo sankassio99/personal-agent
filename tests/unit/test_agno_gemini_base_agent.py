@@ -5,6 +5,7 @@ from unittest.mock import AsyncMock
 
 from finance_assistant.application.handlers.telegram_handlers import build_start_message, markdown_to_telegram_html
 from finance_assistant.application.services.telegram_adapter_service import TelegramAdapterService
+from finance_assistant.infrastructure.agents.add_expense_tool import add_expense
 from finance_assistant.infrastructure.agents.base_agent import BaseAgent
 from finance_assistant.infrastructure.agents.response_agent import FinanceAgent
 from finance_assistant.infrastructure.config import settings as settings_module
@@ -112,9 +113,11 @@ def test_base_agent_create_agent_accepts_spreadsheet_range_override(monkeypatch)
     base = BaseAgent.__new__(BaseAgent)
     base.model = object()
 
-    base._create_agent("You answer finance questions.", spreadsheet_range="'Sumário'!B27:F42")
+    agent = base._create_agent("You answer finance questions.", spreadsheet_range="'Sumário'!B27:F42")
 
     assert captured["spreadsheet_range"] == "'Sumário'!B27:F42"
+    assert agent.tools[0] is not None
+    assert agent.tools[1].name == "add_expense"
 
 
 def test_handle_recurring_forwards_recurring_range_override(monkeypatch):
@@ -168,6 +171,48 @@ def test_unknown_telegram_user_gets_registration_message_and_skips_agent(monkeyp
     assert "administrador" in sent_message.lower()
     assert "planilha" in sent_message.lower()
     assert "cadastro" in sent_message.lower()
+
+
+def test_add_expense_tool_uses_google_sheets_append_support(monkeypatch):
+    captured = {}
+
+    class DummyAppend:
+        def __init__(self, payload):
+            self.payload = payload
+
+        def execute(self):
+            return {"updates": {"updatedRange": "Despesas!A4"}}
+
+    class DummyValues:
+        def append(self, spreadsheetId, range, valueInputOption, insertDataOption, body):
+            captured["spreadsheetId"] = spreadsheetId
+            captured["range"] = range
+            captured["valueInputOption"] = valueInputOption
+            captured["insertDataOption"] = insertDataOption
+            captured["body"] = body
+            return DummyAppend(body)
+
+    class DummySheets:
+        def spreadsheets(self):
+            return SimpleNamespace(values=lambda: DummyValues())
+
+    monkeypatch.setattr("finance_assistant.infrastructure.agents.add_expense_tool._get_sheets_service", lambda: DummySheets())
+    monkeypatch.setattr("finance_assistant.infrastructure.agents.add_expense_tool.TelegramAdapterService", lambda: SimpleNamespace(resolve_spreadsheet_id=lambda telegram_user_id: "sheet-id"))
+
+    message = add_expense.entrypoint(
+        date="2026-09-14",
+        amount=10.25,
+        description="coffee",
+        category="food",
+        telegram_user_id=123,
+    )
+
+    assert "Expense added successfully" in message
+    assert captured["spreadsheetId"] == "sheet-id"
+    assert captured["range"] == "Despesas!A:D"
+    assert captured["valueInputOption"] == "USER_ENTERED"
+    assert captured["insertDataOption"] == "INSERT_ROWS"
+    assert captured["body"] == {"values": [["2026-09-14", 10.25, "coffee", "food"]]}
 
 
 def test_telegram_adapter_service_returns_spreadsheet_for_known_telegram_user():
