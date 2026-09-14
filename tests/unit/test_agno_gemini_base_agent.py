@@ -4,6 +4,7 @@ from types import SimpleNamespace
 from unittest.mock import AsyncMock
 
 from finance_assistant.application.handlers.telegram_handlers import build_start_message, markdown_to_telegram_html
+from finance_assistant.infrastructure.agents.speech_to_text_agent import SpeechToTextAgent
 from finance_assistant.application.services.telegram_adapter_service import TelegramAdapterService
 from finance_assistant.infrastructure.agents.add_expense_tool import add_expense
 from finance_assistant.infrastructure.agents.base_agent import BaseAgent
@@ -174,7 +175,11 @@ def test_handle_audio_message_transcribes_audio_then_forwards_transcript_to_fina
     context = SimpleNamespace(bot=SimpleNamespace(get_file=lambda file_id: DummyFile()))
     update = SimpleNamespace(
         effective_user=SimpleNamespace(id=123456789),
-        message=SimpleNamespace(audio=SimpleNamespace(file_id="abc"), voice=None, reply_text=reply_text),
+        message=SimpleNamespace(
+            audio=SimpleNamespace(file_id="abc"),
+            voice=None,
+            reply_text=reply_text,
+        ),
     )
 
     monkeypatch.setattr(handlers.telegram_adapter_service, "resolve_spreadsheet_id", lambda telegram_user_id: "sheet-id")
@@ -187,6 +192,43 @@ def test_handle_audio_message_transcribes_audio_then_forwards_transcript_to_fina
     assert captured["message"] == "gasto de mercado"
     assert captured["spreadsheet_range"] == handlers.EXPENSES_RANGE_NAME
     assert "sheet-id" in captured["instructions"]
+
+
+def test_speech_to_text_agent_transcribes_supplied_audio_bytes(monkeypatch):
+    import finance_assistant.infrastructure.agents.speech_to_text_agent as speech_module
+
+    captured = {}
+
+    class DummyAudio:
+        def __init__(self, content):
+            self.content = content
+
+    class DummyGemini:
+        def __init__(self, id=None, api_key=None):
+            self.id = id
+            self.api_key = api_key
+
+    class DummyAgent:
+        def __init__(self, model=None, markdown=False):
+            self.model = model
+            self.markdown = markdown
+
+        def run(self, prompt, audio=None):
+            captured["prompt"] = prompt
+            captured["audio"] = audio
+            return SimpleNamespace(content="transcript text")
+
+    monkeypatch.setattr(speech_module, "Agent", DummyAgent)
+    monkeypatch.setattr(speech_module, "Audio", DummyAudio)
+    monkeypatch.setattr(speech_module, "Gemini", DummyGemini)
+
+    agent = SpeechToTextAgent()
+    transcript = agent.transcribe(b"voice-buffer")
+
+    assert transcript == "transcript text"
+    assert captured["prompt"].startswith("Give a transcript")
+    assert isinstance(captured["audio"], list)
+    assert captured["audio"][0].content == b"voice-buffer"
 
 
 def test_unknown_telegram_user_gets_registration_message_and_skips_agent(monkeypatch):
