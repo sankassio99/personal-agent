@@ -148,6 +148,47 @@ def test_handle_recurring_forwards_recurring_range_override(monkeypatch):
     assert captured["instructions"] == handlers.build_instructions("sheet-id", handlers.RECURRING_SPREADSHEET_RANGE)
 
 
+def test_handle_audio_message_transcribes_audio_then_forwards_transcript_to_finance_agent(monkeypatch):
+    from finance_assistant.application.handlers import telegram_handlers as handlers
+
+    captured = {}
+
+    class DummySpeechToTextAgent:
+        def transcribe(self, audio_bytes):
+            return "gasto de mercado"
+
+    class DummyFinanceAgent:
+        def __init__(self, instructions=None, spreadsheet_range=None):
+            captured["instructions"] = instructions
+            captured["spreadsheet_range"] = spreadsheet_range
+
+        def respond(self, message):
+            captured["message"] = message
+            return "ok"
+
+    class DummyFile:
+        def __init__(self):
+            self.download_as_bytearray = AsyncMock(return_value=b"audio-bytes")
+
+    reply_text = AsyncMock()
+    context = SimpleNamespace(bot=SimpleNamespace(get_file=lambda file_id: DummyFile()))
+    update = SimpleNamespace(
+        effective_user=SimpleNamespace(id=123456789),
+        message=SimpleNamespace(audio=SimpleNamespace(file_id="abc"), voice=None, reply_text=reply_text),
+    )
+
+    monkeypatch.setattr(handlers.telegram_adapter_service, "resolve_spreadsheet_id", lambda telegram_user_id: "sheet-id")
+    monkeypatch.setattr(handlers, "SpeechToTextAgent", DummySpeechToTextAgent)
+    monkeypatch.setattr(handlers, "FinanceAgent", DummyFinanceAgent)
+    monkeypatch.setattr(handlers, "markdown_to_telegram_html", lambda reply: reply)
+
+    asyncio.run(handlers.handle_audio_message(update, context))
+
+    assert captured["message"] == "gasto de mercado"
+    assert captured["spreadsheet_range"] == handlers.EXPENSES_RANGE_NAME
+    assert "sheet-id" in captured["instructions"]
+
+
 def test_unknown_telegram_user_gets_registration_message_and_skips_agent(monkeypatch):
     from finance_assistant.application.handlers import telegram_handlers as handlers
 

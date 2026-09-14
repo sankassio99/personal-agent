@@ -11,6 +11,7 @@ from telegram.ext import ContextTypes
 from finance_assistant.application.services.telegram_adapter_service import TelegramAdapterService
 from finance_assistant.infrastructure.agents.prompts import FINANCE_ASSISTANT_PROMPT
 from finance_assistant.infrastructure.agents.response_agent import FinanceAgent
+from finance_assistant.infrastructure.agents.speech_to_text_agent import SpeechToTextAgent
 
 
 logger = logging.getLogger(__name__)
@@ -108,6 +109,49 @@ async def handle_message(update: Update, context: ContextTypes.DEFAULT_TYPE) -> 
     msg = update.message.text or ""
     logger.info("Telegram message received for response processing: %s", msg)
     await _dispatch_finance_reply(update, msg, EXPENSES_RANGE_NAME)
+
+
+async def handle_audio_message(update: Update, context: ContextTypes.DEFAULT_TYPE) -> None:
+    """Handle Telegram audio and voice messages by transcribing them and forwarding the transcript to the finance flow."""
+    message = update.message
+    audio_file = None
+
+    if getattr(message, "voice", None) is not None:
+        audio_file = message.voice
+    elif getattr(message, "audio", None) is not None:
+        audio_file = message.audio
+
+    if audio_file is None:
+        await update.message.reply_text("Não consegui ler o áudio recebido. Tente enviar uma mensagem de texto ou um áudio com melhor qualidade.")
+        return
+
+    try:
+        bot = getattr(context, "bot", None)
+        file_obj = None
+        if bot is not None:
+            file_obj = bot.get_file(audio_file.file_id)
+        elif hasattr(update, "bot"):
+            file_obj = update.bot.get_file(audio_file.file_id)
+
+        if file_obj is None:
+            await message.reply_text("Não consegui localizar o arquivo de áudio enviado pelo Telegram.")
+            return
+
+        if hasattr(file_obj, "download_as_bytearray"):
+            audio_bytes = await file_obj.download_as_bytearray()
+        elif hasattr(file_obj, "download_as_bytes"):
+            audio_bytes = await file_obj.download_as_bytes()
+        else:
+            audio_bytes = b""
+
+        transcript = SpeechToTextAgent().transcribe(audio_bytes)
+        if not transcript:
+            transcript = ""
+
+        await _dispatch_finance_reply(update, transcript, EXPENSES_RANGE_NAME)
+    except Exception as exc:
+        logger.warning("Unable to transcribe Telegram audio message: %s", exc)
+        await message.reply_text("Não consegui transcrever o áudio recebido. Tente enviar uma mensagem de texto com sua solicitação.")
 
 
 async def _dispatch_finance_reply(update: Update, message_text: str, spreadsheet_range: str) -> None:
