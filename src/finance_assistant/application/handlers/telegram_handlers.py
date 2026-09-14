@@ -2,6 +2,7 @@
 
 import logging
 import re
+from datetime import datetime
 
 from telegram import Update
 from telegram.constants import ParseMode
@@ -48,6 +49,8 @@ def build_unregistered_user_message(telegram_user_id: int | str | None) -> str:
 def build_instructions(spreadsheet_id: str | None = None, spreadsheet_range: str | None = None) -> str:
     """Build the FinanceAgent instructions payload using a spreadsheet id and range when available."""
     instructions = FINANCE_ASSISTANT_PROMPT
+    today = datetime.now().strftime("%d/%m/%Y")
+    instructions += f" The current date is {today}."
 
     if spreadsheet_id:
         instructions += ". You have access to a Google Sheet with the ID: " + spreadsheet_id + "."
