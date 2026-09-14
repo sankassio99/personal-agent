@@ -114,14 +114,18 @@ async def handle_message(update: Update, context: ContextTypes.DEFAULT_TYPE) -> 
 async def handle_audio_message(update: Update, context: ContextTypes.DEFAULT_TYPE) -> None:
     """Handle Telegram audio and voice messages by transcribing them and forwarding the transcript to the finance flow."""
     message = update.message
+    logger.info("Telegram audio message received for speech-to-text processing.")
     audio_file = None
 
     if getattr(message, "voice", None) is not None:
         audio_file = message.voice
+        logger.info("Telegram voice file detected with file_id=%s", getattr(audio_file, "file_id", None))
     elif getattr(message, "audio", None) is not None:
         audio_file = message.audio
+        logger.info("Telegram audio file detected with file_id=%s", getattr(audio_file, "file_id", None))
 
     if audio_file is None:
+        logger.warning("Telegram audio message arrived without an audio or voice payload.")
         await update.message.reply_text("Não consegui ler o áudio recebido. Tente enviar uma mensagem de texto ou um áudio com melhor qualidade.")
         return
 
@@ -144,13 +148,16 @@ async def handle_audio_message(update: Update, context: ContextTypes.DEFAULT_TYP
         else:
             audio_bytes = b""
 
+        logger.info("Starting speech-to-text transcription for %d downloaded audio bytes.", len(audio_bytes))
         transcript = SpeechToTextAgent().transcribe(audio_bytes)
         if not transcript:
+            logger.warning("Speech-to-text transcript returned an empty string for audio file_id=%s", audio_file.file_id)
             transcript = ""
+        else:
+            logger.info("Speech-to-text transcript produced text length=%d for file_id=%s", len(transcript), audio_file.file_id)
 
         await _dispatch_finance_reply(update, transcript, EXPENSES_RANGE_NAME)
     except Exception as exc:
-        logger.warning("Unable to transcribe Telegram audio message: %s", exc)
         await message.reply_text("Não consegui transcrever o áudio recebido. Tente enviar uma mensagem de texto com sua solicitação.")
 
 

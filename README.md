@@ -72,6 +72,15 @@ chmod +x start_vps.sh
 
 The script uses the virtual environment Python when available, otherwise it falls back to `python3` or `python`, writes the process output to `bot.log`, and stores the background process PID in `finance-assistant.pid`.
 
+To inspect the live launcher log on a VPS, follow the generated log file:
+
+```bash
+cd /path/to/your/project
+cat bot.log
+# or, to keep watching new lines:
+tail -f bot.log
+```
+
 ## Running tests
 
 ```bash
