@@ -19,7 +19,7 @@ from finance_assistant.infrastructure.agents.speech_to_text_agent import SpeechT
 logger = logging.getLogger(__name__)
 
 telegram_adapter_service = TelegramAdapterService()
-SUMMARY_SPREADSHEET_RANGE = "'Sumário'!B27:F42"
+SUMMARY_SPREADSHEET_RANGE = "'Sumário'!B18:H"
 EXPENSES_RANGE_NAME = "'Despesas'!B1:E"
 RECURRING_SPREADSHEET_RANGE = "'Recorrentes'!A1:E50"
 
