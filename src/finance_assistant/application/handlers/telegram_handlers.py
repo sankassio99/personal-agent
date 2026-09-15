@@ -69,9 +69,9 @@ def build_help_message() -> str:
     return (
         "📘 Comandos disponíveis:\n"
         "• /start — inicia o cadastro e mostra a orientação de registro\n"
-        "• /summary — usa a faixa de planilha do resumo do usuário\n"
-        "• /recurring — usa a faixa de planilha recorrente do usuário\n"
-        "• /help — mostra esta lista de comandos"
+        "• /sumario — usa a faixa de planilha do resumo do usuário\n"
+        "• /recorrente — usa a faixa de planilha recorrente do usuário\n"
+        "• /ajuda — mostra esta lista de comandos"
     )
 
 

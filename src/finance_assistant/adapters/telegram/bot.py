@@ -20,9 +20,9 @@ def run_bot() -> None:
 
     app = ApplicationBuilder().token(settings.telegram_token).build()
     app.add_handler(CommandHandler("start", handle_start))
-    app.add_handler(CommandHandler("summary", handle_summary))
-    app.add_handler(CommandHandler("recurring", handle_recurring))
-    app.add_handler(CommandHandler("help", handle_help))
+    app.add_handler(CommandHandler("sumario", handle_summary))
+    app.add_handler(CommandHandler("recorrente", handle_recurring))
+    app.add_handler(CommandHandler("ajuda", handle_help))
     app.add_handler(MessageHandler(filters.TEXT & ~filters.COMMAND, handle_message))
     app.add_handler(MessageHandler(filters.AUDIO | filters.VOICE, handle_audio_message))
     app.run_polling()
