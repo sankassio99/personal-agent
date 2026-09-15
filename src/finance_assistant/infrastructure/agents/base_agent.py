@@ -61,13 +61,14 @@ class BaseAgent:
     def _create_agent(self, instructions: str, spreadsheet_range: str | None = None, **kwargs):
         """Create an Agno-style agent from a common model configuration."""
         range_to_use = spreadsheet_range or self.spreadsheet_range or SAMPLE_RANGE_NAME
+        
         google_sheets_tool = GoogleSheetsTools(
             spreadsheet_range=range_to_use,
             oauth_port=8080,
             scopes=SHEETS_SCOPES,
             update_sheet=True,
             create_sheet=True,
-            read_sheet=True,
+            read_sheet=True
         )
 
         logger.info("Creating Agent with instructions length=%s", len(instructions))

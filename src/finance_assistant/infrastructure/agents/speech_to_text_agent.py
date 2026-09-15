@@ -7,15 +7,9 @@ from finance_assistant.infrastructure.config.settings import settings
 
 logger = logging.getLogger(__name__)
 
-try:
-    from agno.agent import Agent
-    from agno.media import Audio
-    from agno.models.google import Gemini
-except Exception:
-    Agent = None
-    Audio = None
-    Gemini = None
-
+from agno.agent import Agent
+from agno.media import Audio
+from agno.models.google import Gemini
 
 class SpeechToTextAgent:
     """Return a plain-text transcript for Telegram audio bytes using an Agno Gemini model when available."""

@@ -89,11 +89,11 @@ def add_expense(
             "Provide spreadsheet_id explicitly or route through TelegramAdapterService."
         )
 
-    values = [[date, amount, description, category]]
+    values = [["By assistant", date, amount, description, category]]
     logger.info(
         "Preparing Google Sheets append payload for spreadsheet_id=%s, range=%s, values=%s",
         spreadsheet_id,
-        f"{sheet_name}!A:D",
+        f"{sheet_name}!A:F",
         values,
     )
 
