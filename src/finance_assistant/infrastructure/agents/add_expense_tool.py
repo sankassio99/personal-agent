@@ -111,7 +111,7 @@ def add_expense(
             .values()
             .append(
                 spreadsheetId=spreadsheet_id,
-                range=f"{sheet_name}!A:D",
+                range=f"{sheet_name}!A:F",
                 valueInputOption="USER_ENTERED",
                 insertDataOption="INSERT_ROWS",
                 body={"values": values},
