@@ -89,13 +89,7 @@ def add_expense(
             "Provide spreadsheet_id explicitly or route through TelegramAdapterService."
         )
 
-    values = [["By assistant", date, amount, description, category]]
-    logger.info(
-        "Preparing Google Sheets append payload for spreadsheet_id=%s, range=%s, values=%s",
-        spreadsheet_id,
-        f"{sheet_name}!A:F",
-        values,
-    )
+    values = [["🤖", date, amount, description, category]]
 
     try:
         sheets = _get_sheets_service()
@@ -105,13 +99,13 @@ def add_expense(
         raise RuntimeError(f"Unable to build Google Sheets service with default credentials: {exc}") from exc
 
     try:
-        logger.info("Appending expense row to Google Sheets: spreadsheet_id=%s, range=%s", spreadsheet_id, f"{sheet_name}!A:D")
+        logger.info("Appending expense row to Google Sheets")
         result = (
             sheets.spreadsheets()
             .values()
             .append(
                 spreadsheetId=spreadsheet_id,
-                range=f"{sheet_name}!A:F",
+                range=f"{sheet_name}!A:E",
                 valueInputOption="USER_ENTERED",
                 insertDataOption="INSERT_ROWS",
                 body={"values": values},
