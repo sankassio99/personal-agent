@@ -16,6 +16,7 @@ class TelegramAdapterService:
             8910318803: "19HBfcD7gLrvMQFW9RWBezGqtvNh75acAICPevBJWAkY", # Kassio
             5881962910: "1tXN6W9CG57a6aFIWaR9qjo53VBWGYeNd2Sl8Gz9JoLA", # Leti
             8363962188: "1XQUab5I1Migodb5RSa6Giz1JhMDD3gLBNyLo94C_zl8", # Mari
+            8561890802: "1ZaCfOuVdHa3H_Q7_UloP467jvA6r9BMgttIzeqxSouM", # Mari
         }
 
     def resolve_spreadsheet_id(self, telegram_user_id: int | str | None) -> str | None:
