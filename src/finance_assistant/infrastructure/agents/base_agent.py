@@ -8,6 +8,7 @@ from agno.tools.google.sheets import GoogleSheetsTools
 
 from finance_assistant.infrastructure.agents.add_expense_tool import add_expense
 from finance_assistant.infrastructure.agents.get_last_expense_tool import get_last_expense
+from finance_assistant.infrastructure.agents.validate_expense_row_tool import validate_expense_row
 
 logger = logging.getLogger(__name__)
 
@@ -74,7 +75,7 @@ class BaseAgent:
 
         logger.info("Creating Agent with instructions length=%s", len(instructions))
         return Agent(
-            tools=[google_sheets_tool, get_last_expense, add_expense],
+            tools=[google_sheets_tool, get_last_expense, add_expense, validate_expense_row],
             model=self.model,
             instructions=instructions,
             **kwargs,

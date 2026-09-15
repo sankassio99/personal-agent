@@ -120,6 +120,7 @@ def test_base_agent_create_agent_accepts_spreadsheet_range_override(monkeypatch)
     assert agent.tools[0] is not None
     assert agent.tools[1].name == "get_last_expense"
     assert agent.tools[2].name == "add_expense"
+    assert agent.tools[3].name == "validate_expense_row"
 
 
 def test_get_last_expense_reads_the_last_non_empty_sheet_row(monkeypatch):
@@ -154,6 +155,43 @@ def test_get_last_expense_reads_the_last_non_empty_sheet_row(monkeypatch):
 
     assert message == "Last expense: 2026-09-14 | 10.25"
     assert captured == {"spreadsheetId": "sheet-id", "range": "Despesas!B:F"}
+
+
+def test_validate_expense_row_confirms_the_last_expense_values(monkeypatch):
+    from finance_assistant.infrastructure.agents.validate_expense_row_tool import validate_expense_row
+
+    class DummyGet:
+        def execute(self):
+            return {"values": [["🤖", "14/09/2026", "10.25", "coffee", "food"]]}
+
+    class DummyValues:
+        def get(self, spreadsheetId, range):
+            assert spreadsheetId == "sheet-id"
+            assert range == "Despesas!A:E"
+            return DummyGet()
+
+    class DummySheets:
+        def spreadsheets(self):
+            return SimpleNamespace(values=lambda: DummyValues())
+
+    monkeypatch.setattr(
+        "finance_assistant.infrastructure.agents.validate_expense_row_tool._get_sheets_service",
+        lambda: DummySheets(),
+    )
+    monkeypatch.setattr(
+        "finance_assistant.infrastructure.agents.validate_expense_row_tool.TelegramAdapterService",
+        lambda: SimpleNamespace(resolve_spreadsheet_id=lambda telegram_user_id: "sheet-id"),
+    )
+
+    message = validate_expense_row.entrypoint(
+        date="14/09/2026",
+        amount=10.25,
+        description="coffee",
+        category="food",
+        telegram_user_id=123,
+    )
+
+    assert message == "Expense row is valid."
 
 
 def test_handle_recurring_forwards_recurring_range_override(monkeypatch):

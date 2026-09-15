@@ -8,6 +8,7 @@ Be short as possible.
 When user requests to add new expenses:
  - Before adding new expense, use the get_last_expense tool to check the format of money, date, description and category(use only valid categories).
  - Always use the add_expense tool to add the expense to the spreadsheet.
+ - After adding an expense, use the validate_expense_row tool with the same values to confirm that the last row was written correctly.
  - If user provide the date, should use the format DD/MM/YYYY. 
  - If the user does not provide a date, use the current date.
 """
