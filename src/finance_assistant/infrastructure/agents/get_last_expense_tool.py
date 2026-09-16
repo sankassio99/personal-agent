@@ -37,7 +37,7 @@ def get_last_expense(
             .values()
             .get(
                 spreadsheetId=spreadsheet_id,
-                range=f"{sheet_name}!A:F",
+                range=f"{sheet_name}!A:E",
             )
             .execute()
         )
