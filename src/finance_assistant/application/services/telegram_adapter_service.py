@@ -16,7 +16,9 @@ class TelegramAdapterService:
             8910318803: "19HBfcD7gLrvMQFW9RWBezGqtvNh75acAICPevBJWAkY", # Kassio
             5881962910: "1tXN6W9CG57a6aFIWaR9qjo53VBWGYeNd2Sl8Gz9JoLA", # Leti
             8363962188: "1XQUab5I1Migodb5RSa6Giz1JhMDD3gLBNyLo94C_zl8", # Mari
-            8561890802: "1ZaCfOuVdHa3H_Q7_UloP467jvA6r9BMgttIzeqxSouM", # Cassia Teste
+            1561890802: "1ZaCfOuVdHa3H_Q7_UloP467jvA6r9BMgttIzeqxSouM", # Cassia Teste
+            1561890802: "18vhWQ3Hy3hDGD9Guii7XUAN2poXBC5erb_lPcFnPzhY", # Tomaz
+            5139741753: "12U-jti9ICT3ms9mGKvZwRZiXKstff4m5GlBjcc9i9Rw", # Crisley
         }
 
     def resolve_spreadsheet_id(self, telegram_user_id: int | str | None) -> str | None:
