@@ -15,7 +15,7 @@ class Settings:
     google_client_secret: str = os.getenv("GOOGLE_CLIENT_SECRET", "")
     google_project_id: str = os.getenv("GOOGLE_PROJECT_ID", "")
     gemini_api_key: str = os.getenv("GEMINI_API_KEY", "")
-    gemini_model_id: str = os.getenv("GEMINI_MODEL_ID", "gemini-3.8-flash")
+    gemini_model_id: str = os.getenv("GEMINI_MODEL_ID", "gemini-2.5-flash-lite")
 
 
 settings = Settings()
