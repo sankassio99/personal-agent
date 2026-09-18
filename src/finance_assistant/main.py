@@ -1,5 +1,6 @@
 """Main application entrypoint."""
 import logging
+from datetime import time
 
 from finance_assistant.adapters.telegram.bot import run_bot
 from finance_assistant.application.services.daily_summary_job import DailySummaryJob
@@ -10,9 +11,10 @@ logging.basicConfig(level=logging.INFO)
 
 def main() -> None:
     """Main execution entrypoint."""
-    scheduler = DailySummaryScheduler()
+    scheduler = DailySummaryScheduler(time(14, 21))
     job = DailySummaryJob()
-    scheduler.start(lambda: job.run_for_user(8910318803))
+    # scheduler.start(lambda: job.run_for_user(8910318803))
+    job.run_for_user(8910318803, "Despesas")
     run_bot()
 
 

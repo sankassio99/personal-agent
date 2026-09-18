@@ -14,7 +14,7 @@ class DailySummaryScheduler:
     """Small scheduler helper that calculates the next run time for a daily 8:00 PM trigger."""
 
     def __init__(self, trigger_time: time | None = None):
-        self.trigger_time = trigger_time or time(13, 39)
+        self.trigger_time = trigger_time or time(20, 0)
 
     def _compute_seconds_until_next_run(self, now: datetime) -> int:
         """Return the number of seconds until the next configured trigger time."""

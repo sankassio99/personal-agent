@@ -11,7 +11,6 @@ from finance_assistant.infrastructure.repositories.google_sheets_repository impo
 
 logger = logging.getLogger(__name__)
 
-
 class DailySummaryJob:
     """Scheduled job that summarizes the current day's expense rows."""
 
@@ -34,19 +33,43 @@ class DailySummaryJob:
 
         rows = self.repository.get_sheet(
             spreadsheet_id,
-            effective_sheet,
-            filter=lambda row: bool(row) and len(row) >= 4 and str(row[0]).strip() == today,
+            effective_sheet
         )
+
+        
         return self.summary_service.filter_by_current_date(rows)
 
     def run_for_user(self, telegram_user_id: int | str | None, sheet_name: str | None = None) -> list[dict[str, object]]:
         """Resolve a spreadsheet id for a Telegram user, summarize the current day, and send it to the user."""
+        logger.info("Starting daily summary for telegram_user_id=%s", telegram_user_id)
+
         spreadsheet_id = TelegramAdapterService().resolve_spreadsheet_id(telegram_user_id)
         if not spreadsheet_id:
+            logger.warning("Daily summary skipped for telegram_user_id=%s because no spreadsheet mapping exists.", telegram_user_id)
             raise ValueError("No spreadsheet mapping is available for the provided Telegram user.")
 
+        logger.info(
+            "Resolved telegram_user_id=%s to spreadsheet_id=%s for daily summary.",
+            telegram_user_id,
+            spreadsheet_id,
+        )
+
         result = self.run_for_spreadsheet(spreadsheet_id, sheet_name=sheet_name)
-        self.telegram_service.send_message(telegram_user_id, self._format_summary_message(result))
+        
+        logger.info(
+            "Daily summary for telegram_user_id=%s produced %s record(s).",
+            telegram_user_id,
+            len(result),
+        )
+
+        message = self._format_summary_message(result)
+        logger.info("Sending daily summary message to telegram_user_id=%s", telegram_user_id)
+        
+        logger.info("___________________________________________________________")
+        logger.info("message: %s", message)
+        logger.info("___________________________________________________________")
+        
+        self.telegram_service.send_message(telegram_user_id, message)
         return result
 
     def _format_summary_message(self, rows: list[dict[str, object]]) -> str:
@@ -57,7 +80,7 @@ class DailySummaryJob:
         lines = ["Resumo diário:"]
         for row in rows:
             lines.append(
-                f"- {row['date']} | {row['description']} | {row['category']} | R$ {float(row['value']):.2f}"
+                f"- {row['date']} | {row['description']} | {row['category']} | {row['value']}"
             )
         return "\n".join(lines)
 
