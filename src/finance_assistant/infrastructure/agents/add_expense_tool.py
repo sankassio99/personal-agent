@@ -89,7 +89,7 @@ def add_expense(
             "Provide spreadsheet_id explicitly or route through TelegramAdapterService."
         )
 
-    values = [[date, amount, description, category]]
+    values = [["🤖", date, amount, description, category]]
 
     try:
         sheets = _get_sheets_service()
@@ -105,7 +105,7 @@ def add_expense(
             .values()
             .append(
                 spreadsheetId=spreadsheet_id,
-                range=f"{sheet_name}!A:D",
+                range=f"{sheet_name}!A:E",
                 valueInputOption="USER_ENTERED",
                 insertDataOption="INSERT_ROWS",
                 body={"values": values},
