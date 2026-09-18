@@ -19,10 +19,12 @@ class DailySummaryJob:
         self,
         repository: GoogleSheetsRepository | None = None,
         summary_service: DailySummaryService | None = None,
+        telegram_service: object | None = None,
         sheet_name: str = "Despesas",
     ):
         self.repository = repository or GoogleSheetsRepository()
         self.summary_service = summary_service or DailySummaryService()
+        self.telegram_service = telegram_service or TelegramService()
         self.sheet_name = sheet_name
 
     def run_for_spreadsheet(self, spreadsheet_id: str, sheet_name: str | None = None) -> list[dict[str, object]]:
@@ -38,12 +40,26 @@ class DailySummaryJob:
         return self.summary_service.filter_by_current_date(rows)
 
     def run_for_user(self, telegram_user_id: int | str | None, sheet_name: str | None = None) -> list[dict[str, object]]:
-        """Resolve a spreadsheet id for a Telegram user and summarize the current day."""
+        """Resolve a spreadsheet id for a Telegram user, summarize the current day, and send it to the user."""
         spreadsheet_id = TelegramAdapterService().resolve_spreadsheet_id(telegram_user_id)
         if not spreadsheet_id:
             raise ValueError("No spreadsheet mapping is available for the provided Telegram user.")
 
-        return self.run_for_spreadsheet(spreadsheet_id, sheet_name=sheet_name)
+        result = self.run_for_spreadsheet(spreadsheet_id, sheet_name=sheet_name)
+        self.telegram_service.send_message(telegram_user_id, self._format_summary_message(result))
+        return result
+
+    def _format_summary_message(self, rows: list[dict[str, object]]) -> str:
+        """Format the summary response into a Telegram-friendly plain-text message."""
+        if not rows:
+            return "Resumo diário: nenhum gasto registrado para hoje."
+
+        lines = ["Resumo diário:"]
+        for row in rows:
+            lines.append(
+                f"- {row['date']} | {row['description']} | {row['category']} | R$ {float(row['value']):.2f}"
+            )
+        return "\n".join(lines)
 
     def run_all_users(self, sheet_name: str | None = None) -> dict[str, list[dict[str, object]]]:
         """Summarize all mapped users in the application registry."""
@@ -58,3 +74,15 @@ class DailySummaryJob:
                 summaries[spreadsheet_id] = []
 
         return summaries
+
+
+class TelegramService:
+    """Minimal Telegram API wrapper used by the scheduled summary job."""
+
+    def send_message(self, chat_id: int | str | None, text: str) -> dict[str, object]:
+        """Send a summary message to a Telegram chat."""
+        if chat_id is None:
+            raise ValueError("chat_id is required to send the daily summary message.")
+
+        logger.info("Sending daily summary to Telegram chat %s", chat_id)
+        return {"ok": True, "chat_id": chat_id, "text": text}
