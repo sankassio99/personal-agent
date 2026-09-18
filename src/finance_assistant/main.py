@@ -11,10 +11,10 @@ logging.basicConfig(level=logging.INFO)
 
 def main() -> None:
     """Main execution entrypoint."""
-    scheduler = DailySummaryScheduler(time(14, 21))
+    scheduler = DailySummaryScheduler(time(20, 0))
     job = DailySummaryJob()
-    # scheduler.start(lambda: job.run_for_user(8910318803))
-    job.run_for_user(8910318803, "Despesas")
+    scheduler.start(lambda: job.run_all_users)
+    # job.run_for_user(8910318803, "Despesas")
     run_bot()
 
 
