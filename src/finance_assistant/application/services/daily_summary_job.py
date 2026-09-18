@@ -2,12 +2,16 @@
 
 from __future__ import annotations
 
+import asyncio
+import inspect
 import logging
 from datetime import date
 
 from finance_assistant.application.services.daily_summary_service import DailySummaryService
 from finance_assistant.application.services.telegram_adapter_service import TelegramAdapterService
+from finance_assistant.infrastructure.config.settings import settings
 from finance_assistant.infrastructure.repositories.google_sheets_repository import GoogleSheetsRepository
+from telegram import Bot
 
 logger = logging.getLogger(__name__)
 
@@ -100,12 +104,28 @@ class DailySummaryJob:
 
 
 class TelegramService:
-    """Minimal Telegram API wrapper used by the scheduled summary job."""
+    """Telegram API wrapper used by the scheduled summary job."""
+
+    def __init__(self, token: str | None = None):
+        self.token = token or settings.telegram_token
 
     def send_message(self, chat_id: int | str | None, text: str) -> dict[str, object]:
         """Send a summary message to a Telegram chat."""
         if chat_id is None:
             raise ValueError("chat_id is required to send the daily summary message.")
+        if not self.token:
+            raise RuntimeError("TELEGRAM_BOT_TOKEN is not configured. Set it in the environment or .env file.")
 
+        bot = Bot(token=self.token)
         logger.info("Sending daily summary to Telegram chat %s", chat_id)
-        return {"ok": True, "chat_id": chat_id, "text": text}
+        response = bot.send_message(chat_id=chat_id, text=text)
+
+        if inspect.isawaitable(response):
+            response = asyncio.run(response)
+
+        if isinstance(response, dict):
+            message_id = response.get("message_id")
+        else:
+            message_id = getattr(response, "message_id", None)
+
+        return {"ok": True, "chat_id": chat_id, "text": text, "message_id": message_id}

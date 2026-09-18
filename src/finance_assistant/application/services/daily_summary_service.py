@@ -44,17 +44,17 @@ class DailySummaryService:
                 logger.info("Skipping row because row_date=%s does not match current_day=%s", row_date, current_day.isoformat())
                 continue
 
-            # try:
-            #     numeric_value = self._parse_money(value)
-            # except (TypeError, ValueError):
-            #     logger.warning("Ignoring row with non-numeric value for summary: %s", row)
-            #     continue
+            try:
+                numeric_value = self._parse_money(value)
+            except (TypeError, ValueError):
+                logger.warning("Ignoring row with non-numeric value for summary: %s", row)
+                continue
 
-            logger.info("Accepted row for summary: date=%s, value=%s, description=%s, category=%s", row_date, value, description, category)
+            logger.info("Accepted row for summary: date=%s, value=%s, description=%s, category=%s", row_date, numeric_value, description, category)
             filtered.append(
                 {
                     "date": row_date,
-                    "value": value,
+                    "value": numeric_value,
                     "description": str(description),
                     "category": str(category),
                 }

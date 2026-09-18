@@ -2,7 +2,7 @@ from datetime import date, datetime, time
 
 import pytest
 
-from finance_assistant.application.services.daily_summary_job import DailySummaryJob
+from finance_assistant.application.services.daily_summary_job import DailySummaryJob, TelegramService
 from finance_assistant.application.services.daily_summary_service import DailySummaryService
 from finance_assistant.application.services.daily_summary_scheduler import DailySummaryScheduler
 from finance_assistant.infrastructure.repositories.google_sheets_repository import GoogleSheetsRepository
@@ -76,6 +76,28 @@ def test_daily_summary_job_sends_summary_to_telegram_user():
     assert result == [{"date": "2026-09-18", "value": 12.5, "description": "Lunch", "category": "Food"}]
     assert job.telegram_service.calls[0]["chat_id"] == 8910318803
     assert "Lunch" in job.telegram_service.calls[0]["text"]
+
+
+def test_telegram_service_uses_real_bot_client(monkeypatch):
+    sent = {}
+
+    class FakeBot:
+        def __init__(self, token):
+            self.token = token
+
+        def send_message(self, chat_id, text):
+            sent["chat_id"] = chat_id
+            sent["text"] = text
+            return {"ok": True, "chat_id": chat_id, "text": text}
+
+    monkeypatch.setattr("finance_assistant.application.services.daily_summary_job.Bot", FakeBot)
+    monkeypatch.setattr("finance_assistant.application.services.daily_summary_job.settings.telegram_token", "fake-token")
+
+    service = TelegramService()
+    response = service.send_message(123456789, "hello")
+
+    assert response["ok"] is True
+    assert sent == {"chat_id": 123456789, "text": "hello"}
 
 
 def test_google_sheets_repository_raises_error_on_api_failure(monkeypatch):
