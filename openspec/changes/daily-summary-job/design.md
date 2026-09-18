@@ -52,4 +52,5 @@ This change introduces a background daily summary job that triggers at 20:00 and
 
 - Whether the summary should be emitted to Telegram, logs, or a future webhook/API endpoint.
 - Whether the scheduler should be implemented with APScheduler, cron shell configuration, or a simple background process managed by the application runtime.
+Should use https://scheduler.digon.io/pages/examples/quick_start.html
 - Whether the job should process all configured users or a single spreadsheet source for the current user context.

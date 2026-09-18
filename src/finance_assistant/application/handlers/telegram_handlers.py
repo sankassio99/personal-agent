@@ -117,10 +117,10 @@ async def handle_audio_message(
     update: Update,
     context: ContextTypes.DEFAULT_TYPE,
 ) -> None:
-    message = update.effective_message
+    message = getattr(update, "effective_message", None) or getattr(update, "message", None)
 
     if message is None or (
-        message.voice is None and message.audio is None
+        getattr(message, "voice", None) is None and getattr(message, "audio", None) is None
     ):
         return
 
@@ -130,14 +130,25 @@ async def handle_audio_message(
         # 1. Download the Telegram audio
         audio = message.voice or message.audio
 
-        telegram_file = await context.bot.get_file(
-            audio.file_id
-        )
+        telegram_file_result = context.bot.get_file(audio.file_id)
+        if inspect.isawaitable(telegram_file_result):
+            telegram_file = await telegram_file_result
+        else:
+            telegram_file = telegram_file_result
 
         audio_buffer = BytesIO()
-        await telegram_file.download_to_memory(audio_buffer)
-
-        audio_bytes = audio_buffer.getvalue()
+        download_to_memory = getattr(telegram_file, "download_to_memory", None)
+        if download_to_memory is not None:
+            result = download_to_memory(audio_buffer)
+            if inspect.isawaitable(result):
+                await result
+            audio_bytes = audio_buffer.getvalue()
+        else:
+            result = telegram_file.download_as_bytearray()
+            if inspect.isawaitable(result):
+                audio_bytes = await result
+            else:
+                audio_bytes = result
 
         # 2. Transcribe the audio
         speech_agent = SpeechToTextAgent()

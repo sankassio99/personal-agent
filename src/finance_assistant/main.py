@@ -2,12 +2,19 @@
 import logging
 
 from finance_assistant.adapters.telegram.bot import run_bot
+from finance_assistant.application.services.daily_summary_job import DailySummaryJob
+from finance_assistant.application.services.daily_summary_scheduler import DailySummaryScheduler
 
 logging.basicConfig(level=logging.INFO)
 
+
 def main() -> None:
     """Main execution entrypoint."""
+    scheduler = DailySummaryScheduler()
+    job = DailySummaryJob()
+    scheduler.start(lambda: job.run_for_user(8910318803))
     run_bot()
+
 
 if __name__ == "__main__":
     main()

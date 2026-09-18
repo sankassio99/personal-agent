@@ -75,7 +75,7 @@ class BaseAgent:
 
         logger.info("Creating Agent with instructions length=%s", len(instructions))
         return Agent(
-            tools=[google_sheets_tool, get_last_expense, add_expense],
+            tools=[google_sheets_tool, get_last_expense, add_expense, validate_expense_row],
             model=self.model,
             instructions=instructions,
             **kwargs,

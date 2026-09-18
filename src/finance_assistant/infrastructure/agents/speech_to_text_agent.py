@@ -23,11 +23,17 @@ class SpeechToTextAgent:
         self.model_id = model_id or getattr(settings, "gemini_model_id", "gemini-2.5-flash-lite")
         self.api_key = api_key or getattr(settings, "gemini_api_key", os.getenv("GEMINI_API_KEY", ""))
         
-        self.model = Gemini(
-                    id=self.model_id, 
-                    api_key=self.api_key,
-                    model_type="output_model"
-                )
+        try:
+            self.model = Gemini(
+                id=self.model_id,
+                api_key=self.api_key,
+                model_type="output_model",
+            )
+        except TypeError:
+            self.model = Gemini(
+                id=self.model_id,
+                api_key=self.api_key,
+            )
         
         self.agent = Agent(model=self.model)
 
