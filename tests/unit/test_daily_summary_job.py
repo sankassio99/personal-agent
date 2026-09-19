@@ -33,6 +33,24 @@ def test_daily_summary_scheduler_uses_8pm_target_time():
     assert delay == 1800
 
 
+def test_daily_summary_job_formats_summary_message_with_total():
+    job = DailySummaryJob()
+    rows = [
+        {"date": "2026-09-18", "value": 10.0, "description": "Remédio Bupropiona", "category": "Saúde"},
+        {"date": "2026-09-18", "value": 9.98, "description": "Remédio Bupropiona", "category": "Extras"},
+    ]
+
+    today = date.today().strftime("%d/%m/%Y")
+    message = job._format_summary_message(rows)
+
+    assert message == (
+        f"📋 <b>Resumo de Gastos de Hoje ({today})</b>:\n\n"
+        "•  Remédio Bupropiona: €10.00 (Saúde)\n"
+        "•  Remédio Bupropiona: €9.98 (Extras)\n\n"
+        "💰 <b>Total gasto hoje</b>: €19.98"
+    )
+
+
 def test_daily_summary_service_handles_brazilian_dates_and_currency_values():
     service = DailySummaryService()
 
@@ -69,6 +87,7 @@ def test_daily_summary_job_sends_summary_to_telegram_user():
     job = DailySummaryJob(
         repository=DummyRepository(),
         telegram_service=DummyTelegramService(),
+        today=date(2026, 9, 18),
     )
 
     result = job.run_for_user(8910318803)

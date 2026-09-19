@@ -253,6 +253,11 @@ def test_handle_audio_message_transcribes_audio_then_forwards_transcript_to_fina
             voice=None,
             reply_text=reply_text,
         ),
+        effective_message=SimpleNamespace(
+            audio=SimpleNamespace(file_id="abc"),
+            voice=None,
+            reply_text=reply_text,
+        ),
     )
 
     monkeypatch.setattr(handlers.telegram_adapter_service, "resolve_spreadsheet_id", lambda telegram_user_id: "sheet-id")
@@ -365,10 +370,10 @@ def test_add_expense_tool_uses_google_sheets_append_support(monkeypatch):
 
     assert "Expense added successfully" in message
     assert captured["spreadsheetId"] == "sheet-id"
-    assert captured["range"] == "Despesas!A:D"
+    assert captured["range"] == "Despesas!A:E"
     assert captured["valueInputOption"] == "USER_ENTERED"
     assert captured["insertDataOption"] == "INSERT_ROWS"
-    assert captured["body"] == {"values": [["2026-09-14", 10.25, "coffee", "food"]]}
+    assert captured["body"] == {"values": [["🤖", "2026-09-14", 10.25, "coffee", "food"]]}
 
 
 def test_telegram_adapter_service_returns_spreadsheet_for_known_telegram_user():

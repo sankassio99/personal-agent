@@ -24,23 +24,23 @@ class DailySummaryJob:
         summary_service: DailySummaryService | None = None,
         telegram_service: object | None = None,
         sheet_name: str = "Despesas",
+        today: date | None = None,
     ):
         self.repository = repository or GoogleSheetsRepository()
         self.summary_service = summary_service or DailySummaryService()
         self.telegram_service = telegram_service or TelegramService()
         self.sheet_name = sheet_name
+        self.today = today or date.today()
 
     def run_for_spreadsheet(self, spreadsheet_id: str, sheet_name: str | None = None) -> list[dict[str, object]]:
         """Fetch and summarize rows for one spreadsheet."""
         effective_sheet = sheet_name or self.sheet_name
-        today = date.today().isoformat()
-
         rows = self.repository.get_sheet(
             spreadsheet_id,
             effective_sheet
         )
-        
-        return self.summary_service.filter_by_current_date(rows, today=date.fromisoformat(today))
+
+        return self.summary_service.filter_by_current_date(rows, today=self.today)
 
     def run_for_user(self, telegram_user_id: int | str | None, sheet_name: str | None = None) -> list[dict[str, object]]:
         """Resolve a spreadsheet id for a Telegram user, summarize the current day, and send it to the user."""
@@ -82,13 +82,25 @@ class DailySummaryJob:
     def _format_summary_message(self, rows: list[dict[str, object]]) -> str:
         """Format the summary response into a Telegram-friendly plain-text message."""
         if not rows:
-            return "Resumo diário: nenhum gasto registrado para hoje."
+            return "📋 <b>Resumo de Gastos de Hoje</b>:\n\nNenhum gasto registrado para hoje."
 
-        lines = ["Resumo diário:"]
+        total = sum(float(row["value"]) for row in rows)
+        today = self.today.strftime("%d/%m/%Y")
+
+        lines = [
+            f"📋 <b>Resumo de Gastos de Hoje ({today})</b>:",
+            ""
+        ]
+
         for row in rows:
             lines.append(
-                f"- {row['date']} | {row['description']} | {row['category']} | {row['value']}"
+                f"•  {row['description']}: €{float(row['value']):.2f} ({row['category']})"
             )
+
+        lines.extend([
+            "",
+            f"💰 <b>Total gasto hoje</b>: €{total:.2f}",
+        ])
         return "\n".join(lines)
 
     def run_all_users(self, sheet_name: str | None = None):
@@ -119,7 +131,7 @@ class TelegramService:
 
         bot = Bot(token=self.token)
         logger.info("Sending daily summary to Telegram chat %s", chat_id)
-        response = bot.send_message(chat_id=chat_id, text=text)
+        response = bot.send_message(chat_id=chat_id, text=text, parse_mode="HTML")
 
         if inspect.isawaitable(response):
             response = asyncio.run(response)
