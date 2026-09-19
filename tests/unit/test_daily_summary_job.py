@@ -41,7 +41,7 @@ def test_daily_summary_job_formats_summary_message_with_total():
     ]
 
     today = date.today().strftime("%d/%m/%Y")
-    message = job._format_summary_message(rows)
+    message = job._format_summary_daily_message(rows)
 
     assert message == (
         f"📋 <b>Resumo de Gastos de Hoje ({today})</b>:\n\n"

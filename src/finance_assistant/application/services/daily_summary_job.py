@@ -70,7 +70,7 @@ class DailySummaryJob:
         return result
 
     def sendMessage(self, telegram_user_id, result):
-        message = self._format_summary_message(result)
+        message = self._format_summary_daily_message(result)
         logger.info("Sending daily summary message to telegram_user_id=%s", telegram_user_id)
         
         logger.info("___________________________________________________________")
@@ -79,7 +79,7 @@ class DailySummaryJob:
         
         self.telegram_service.send_message(telegram_user_id, message)
 
-    def _format_summary_message(self, rows: list[dict[str, object]]) -> str:
+    def _format_summary_daily_message(self, rows: list[dict[str, object]]) -> str:
         """Format the summary response into a Telegram-friendly plain-text message."""
         if not rows:
             return "📋 <b>Resumo de Gastos de Hoje</b>:\n\nNenhum gasto registrado para hoje."
@@ -106,12 +106,22 @@ class DailySummaryJob:
     def run_all_users(self, sheet_name: str | None = None):
         """Summarize all mapped users in the application registry."""
         adapter = TelegramAdapterService()
+        logger.info("___________________________________________________________")
+        logger.info("run_all_users")
+        logger.info("___________________________________________________________")
 
         for user_id in set(adapter.user_to_spreadsheet_map.keys()):
             spreadsheet_id = adapter.user_to_spreadsheet_map[user_id]
+            
             try:
+                logger.info("___________________________________________________________")
+                logger.info("run_for_spreadsheet for user: %s", user_id)
+                logger.info("___________________________________________________________")
+                
                 result = self.run_for_spreadsheet(spreadsheet_id, sheet_name=sheet_name)
+                
                 self.sendMessage(user_id, result)
+                
             except Exception as exc:
                 logger.exception("Daily summary failed for spreadsheet_id=%s", spreadsheet_id)
 

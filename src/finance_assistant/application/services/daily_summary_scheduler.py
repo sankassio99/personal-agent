@@ -29,11 +29,7 @@ class DailySummaryScheduler:
         """Block until the next trigger and then execute the callback every day."""
         while True:
             seconds_until_run = self._compute_seconds_until_next_run(datetime.now())
-            logger.info(
-                "Daily summary scheduler waiting %s seconds until next run at %s",
-                seconds_until_run,
-                self.trigger_time.strftime("%H:%M"),
-            )
+
             time_module.sleep(seconds_until_run)
 
             try:
