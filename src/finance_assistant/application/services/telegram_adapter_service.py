@@ -14,7 +14,7 @@ class TelegramAdapterService:
     def __init__(self, mapping: dict[int | str, str] | None = None):
         self.user_to_spreadsheet_map = mapping or {
             8910318803: "19HBfcD7gLrvMQFW9RWBezGqtvNh75acAICPevBJWAkY", # Kassio
-            1561890802: "19HBfcD7gLrvMQFW9RWBezGqtvNh75acAICPevBJWAkY", # Cassia
+            8561890802: "19HBfcD7gLrvMQFW9RWBezGqtvNh75acAICPevBJWAkY", # Cassia
             5881962910: "1tXN6W9CG57a6aFIWaR9qjo53VBWGYeNd2Sl8Gz9JoLA", # Leti
             8363962188: "1XQUab5I1Migodb5RSa6Giz1JhMDD3gLBNyLo94C_zl8", # Mari
             # 1561890802: "1ZaCfOuVdHa3H_Q7_UloP467jvA6r9BMgttIzeqxSouM", # Cassia Teste
