@@ -14,9 +14,8 @@ def main() -> None:
     scheduler = DailySummaryScheduler(time(20, 0))
     job = DailySummaryJob()
     scheduler.start(lambda: job.run_all_users)
-    job.run_for_user(8910318803, "Despesas")
+    # job.run_for_user(8910318803, "Despesas")
     run_bot()
-
 
 if __name__ == "__main__":
     main()
