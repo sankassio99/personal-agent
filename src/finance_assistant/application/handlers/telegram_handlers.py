@@ -42,7 +42,7 @@ def build_start_message(telegram_user_id: int | str | None = None) -> str:
         "• Envie seu ID do Telegram {telegram_user_id} e seu e-mail\n"
         "• O administrador criará a planilha no Google Sheets e fará o cadastro no sistema."
         ""
-        "Caso já tenha sido cadastradas, digite /help para ver os comandos disponíveis."
+        "Caso já tenha sido cadastradas, digite /ajuda para ver os comandos disponíveis."
     )
 
 

@@ -21,7 +21,7 @@ class TelegramAdapterService:
             1: "18vhWQ3Hy3hDGD9Guii7XUAN2poXBC5erb_lPcFnPzhY", # Tomaz
             5139741753: "12U-jti9ICT3ms9mGKvZwRZiXKstff4m5GlBjcc9i9Rw", # Crisley
             1660630527: "1Z89pzAaYyvrnF8uKRQlP31et7i2nEZGGeCn-ZJsud78", # Camila
-            2: "1Xeo8WFCRVx8nwZwwmlFaC9jCOxPUOCZKQo2_QE_QoKE", # Paulo Sanchez
+            5068170029: "1Xeo8WFCRVx8nwZwwmlFaC9jCOxPUOCZKQo2_QE_QoKE", # Paulo Sanchez
         }
 
     def resolve_spreadsheet_id(self, telegram_user_id: int | str | None) -> str | None:
