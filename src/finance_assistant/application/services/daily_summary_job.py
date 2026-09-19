@@ -39,9 +39,8 @@ class DailySummaryJob:
             spreadsheet_id,
             effective_sheet
         )
-
         
-        return self.summary_service.filter_by_current_date(rows)
+        return self.summary_service.filter_by_current_date(rows, today=date.fromisoformat(today))
 
     def run_for_user(self, telegram_user_id: int | str | None, sheet_name: str | None = None) -> list[dict[str, object]]:
         """Resolve a spreadsheet id for a Telegram user, summarize the current day, and send it to the user."""
@@ -66,6 +65,11 @@ class DailySummaryJob:
             len(result),
         )
 
+        self.sendMessage(telegram_user_id, result)
+        
+        return result
+
+    def sendMessage(self, telegram_user_id, result):
         message = self._format_summary_message(result)
         logger.info("Sending daily summary message to telegram_user_id=%s", telegram_user_id)
         
@@ -74,7 +78,6 @@ class DailySummaryJob:
         logger.info("___________________________________________________________")
         
         self.telegram_service.send_message(telegram_user_id, message)
-        return result
 
     def _format_summary_message(self, rows: list[dict[str, object]]) -> str:
         """Format the summary response into a Telegram-friendly plain-text message."""
@@ -88,19 +91,17 @@ class DailySummaryJob:
             )
         return "\n".join(lines)
 
-    def run_all_users(self, sheet_name: str | None = None) -> dict[str, list[dict[str, object]]]:
+    def run_all_users(self, sheet_name: str | None = None):
         """Summarize all mapped users in the application registry."""
         adapter = TelegramAdapterService()
-        summaries: dict[str, list[dict[str, object]]] = {}
 
-        for spreadsheet_id in set(adapter.user_to_spreadsheet_map.values()):
+        for user_id in set(adapter.user_to_spreadsheet_map.keys()):
+            spreadsheet_id = adapter.user_to_spreadsheet_map[user_id]
             try:
-                summaries[spreadsheet_id] = self.run_for_spreadsheet(spreadsheet_id, sheet_name=sheet_name)
+                result = self.run_for_spreadsheet(spreadsheet_id, sheet_name=sheet_name)
+                self.sendMessage(user_id, result)
             except Exception as exc:
                 logger.exception("Daily summary failed for spreadsheet_id=%s", spreadsheet_id)
-                summaries[spreadsheet_id] = []
-
-        return summaries
 
 
 class TelegramService:
