@@ -3,6 +3,7 @@ from datetime import date, datetime, time
 import pytest
 
 from finance_assistant.application.services.daily_summary_job import DailySummaryJob, TelegramService
+from finance_assistant.application.services.daily_summary_message_formatter import DailySummaryMessageFormatter
 from finance_assistant.application.services.daily_summary_service import DailySummaryService
 from finance_assistant.application.services.daily_summary_scheduler import DailySummaryScheduler
 from finance_assistant.infrastructure.repositories.google_sheets_repository import GoogleSheetsRepository
@@ -33,15 +34,16 @@ def test_daily_summary_scheduler_uses_8pm_target_time():
     assert delay == 1800
 
 
-def test_daily_summary_job_formats_summary_message_with_total():
-    job = DailySummaryJob()
+def test_daily_summary_message_formatter_formats_summary_message_with_total():
+    formatter = DailySummaryMessageFormatter()
     rows = [
         {"date": "2026-09-18", "value": 10.0, "description": "Remédio Bupropiona", "category": "Saúde"},
         {"date": "2026-09-18", "value": 9.98, "description": "Remédio Bupropiona", "category": "Extras"},
     ]
 
-    today = date.today().strftime("%d/%m/%Y")
-    message = job._format_summary_daily_message(rows)
+    today_date = date.today()
+    today = today_date.strftime("%d/%m/%Y")
+    message = formatter.format(rows, today_date)
 
     assert message == (
         f"📋 <b>Resumo de Gastos de Hoje ({today})</b>:\n\n"

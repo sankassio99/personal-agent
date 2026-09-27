@@ -7,6 +7,7 @@ import inspect
 import logging
 from datetime import date
 
+from finance_assistant.application.services.daily_summary_message_formatter import DailySummaryMessageFormatter
 from finance_assistant.application.services.daily_summary_service import DailySummaryService
 from finance_assistant.application.services.telegram_adapter_service import TelegramAdapterService
 from finance_assistant.infrastructure.config.settings import settings
@@ -23,12 +24,14 @@ class DailySummaryJob:
         repository: GoogleSheetsRepository | None = None,
         summary_service: DailySummaryService | None = None,
         telegram_service: object | None = None,
+        message_formatter: DailySummaryMessageFormatter | None = None,
         sheet_name: str = "Despesas",
         today: date | None = None,
     ):
         self.repository = repository or GoogleSheetsRepository()
         self.summary_service = summary_service or DailySummaryService()
         self.telegram_service = telegram_service or TelegramService()
+        self.message_formatter = message_formatter or DailySummaryMessageFormatter()
         self.sheet_name = sheet_name
         self.today = today
 
@@ -74,7 +77,7 @@ class DailySummaryJob:
         return result
 
     def sendMessage(self, telegram_user_id, result):
-        message = self._format_summary_daily_message(result)
+        message = self.message_formatter.format(result, self._current_date())
         logger.info("Sending daily summary message to telegram_user_id=%s", telegram_user_id)
         
         logger.info("___________________________________________________________")
@@ -82,30 +85,6 @@ class DailySummaryJob:
         logger.info("___________________________________________________________")
         
         self.telegram_service.send_message(telegram_user_id, message)
-
-    def _format_summary_daily_message(self, rows: list[dict[str, object]]) -> str:
-        """Format the summary response into a Telegram-friendly plain-text message."""
-        if not rows:
-            return "📋 <b>Resumo de Gastos de Hoje</b>:\n\nNenhum gasto registrado para hoje."
-
-        total = sum(float(row["value"]) for row in rows)
-        today = self._current_date().strftime("%d/%m/%Y")
-
-        lines = [
-            f"📋 <b>Resumo de Gastos de Hoje ({today})</b>:",
-            ""
-        ]
-
-        for row in rows:
-            lines.append(
-                f"•  {row['description']}: €{float(row['value']):.2f} ({row['category']})"
-            )
-
-        lines.extend([
-            "",
-            f"💰 <b>Total gasto hoje</b>: €{total:.2f}",
-        ])
-        return "\n".join(lines)
 
     def run_all_users(self, sheet_name: str | None = None):
         """Summarize all mapped users in the application registry."""
