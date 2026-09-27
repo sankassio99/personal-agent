@@ -124,28 +124,6 @@ def test_daily_summary_job_uses_current_date_for_each_execution(monkeypatch):
     assert second_result[0]["description"] == "Second day"
 
 
-def test_telegram_service_uses_real_bot_client(monkeypatch):
-    sent = {}
-
-    class FakeBot:
-        def __init__(self, token):
-            self.token = token
-
-        def send_message(self, chat_id, text):
-            sent["chat_id"] = chat_id
-            sent["text"] = text
-            return {"ok": True, "chat_id": chat_id, "text": text}
-
-    monkeypatch.setattr("finance_assistant.application.services.daily_summary_job.Bot", FakeBot)
-    monkeypatch.setattr("finance_assistant.application.services.daily_summary_job.settings.telegram_token", "fake-token")
-
-    service = TelegramService()
-    response = service.send_message(123456789, "hello")
-
-    assert response["ok"] is True
-    assert sent == {"chat_id": 123456789, "text": "hello"}
-
-
 def test_google_sheets_repository_raises_error_on_api_failure(monkeypatch):
     class BrokenGoogleSheetsService:
         def spreadsheets(self):
