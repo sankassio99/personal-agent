@@ -30,7 +30,11 @@ class DailySummaryJob:
         self.summary_service = summary_service or DailySummaryService()
         self.telegram_service = telegram_service or TelegramService()
         self.sheet_name = sheet_name
-        self.today = today or date.today()
+        self.today = today
+
+    def _current_date(self) -> date:
+        """Return the injected date or the date for the current execution."""
+        return self.today or date.today()
 
     def run_for_spreadsheet(self, spreadsheet_id: str, sheet_name: str | None = None) -> list[dict[str, object]]:
         """Fetch and summarize rows for one spreadsheet."""
@@ -40,7 +44,7 @@ class DailySummaryJob:
             effective_sheet
         )
 
-        return self.summary_service.filter_by_current_date(rows, today=self.today)
+        return self.summary_service.filter_by_current_date(rows, today=self._current_date())
 
     def run_for_user(self, telegram_user_id: int | str | None, sheet_name: str | None = None) -> list[dict[str, object]]:
         """Resolve a spreadsheet id for a Telegram user, summarize the current day, and send it to the user."""
@@ -85,7 +89,7 @@ class DailySummaryJob:
             return "📋 <b>Resumo de Gastos de Hoje</b>:\n\nNenhum gasto registrado para hoje."
 
         total = sum(float(row["value"]) for row in rows)
-        today = self.today.strftime("%d/%m/%Y")
+        today = self._current_date().strftime("%d/%m/%Y")
 
         lines = [
             f"📋 <b>Resumo de Gastos de Hoje ({today})</b>:",

@@ -97,6 +97,31 @@ def test_daily_summary_job_sends_summary_to_telegram_user():
     assert "Lunch" in job.telegram_service.calls[0]["text"]
 
 
+def test_daily_summary_job_uses_current_date_for_each_execution(monkeypatch):
+    class FakeDate:
+        current_dates = iter([date(2026, 9, 18), date(2026, 9, 19)])
+
+        @classmethod
+        def today(cls):
+            return next(cls.current_dates)
+
+    class DummyRepository:
+        def get_sheet(self, spreadsheet_id, sheet_name):
+            return [
+                ["2026-09-18", "12.50", "First day", "Food"],
+                ["2026-09-19", "7.40", "Second day", "Transport"],
+            ]
+
+    monkeypatch.setattr("finance_assistant.application.services.daily_summary_job.date", FakeDate)
+    job = DailySummaryJob(repository=DummyRepository())
+
+    first_result = job.run_for_spreadsheet("spreadsheet-123")
+    second_result = job.run_for_spreadsheet("spreadsheet-123")
+
+    assert first_result[0]["description"] == "First day"
+    assert second_result[0]["description"] == "Second day"
+
+
 def test_telegram_service_uses_real_bot_client(monkeypatch):
     sent = {}
 
