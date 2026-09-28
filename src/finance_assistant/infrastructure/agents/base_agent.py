@@ -9,6 +9,7 @@ from agno.tools.google.sheets import GoogleSheetsTools
 from finance_assistant.infrastructure.agents.add_expense_tool import add_expense
 from finance_assistant.infrastructure.agents.get_last_expense_tool import get_last_expense
 from finance_assistant.infrastructure.agents.validate_expense_row_tool import validate_expense_row
+from finance_assistant.infrastructure.google_sheets_auth import get_sheets_credentials
 
 logger = logging.getLogger(__name__)
 
@@ -66,8 +67,8 @@ class BaseAgent:
         
         google_sheets_tool = GoogleSheetsTools(
             spreadsheet_range=range_to_use,
-            oauth_port=8080,
             scopes=SHEETS_SCOPES,
+            creds=get_sheets_credentials(),
             update_sheet=True,
             create_sheet=True,
             read_sheet=True
@@ -80,4 +81,3 @@ class BaseAgent:
             instructions=instructions,
             **kwargs,
         )
-

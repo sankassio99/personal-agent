@@ -142,3 +142,34 @@ def test_google_sheets_repository_raises_error_on_api_failure(monkeypatch):
 
     with pytest.raises(RuntimeError, match="Failed to read sheet 'Despesas' from spreadsheet"):
         repo.get_sheet("spreadsheet-123", "Despesas")
+
+
+def test_google_sheets_repository_uses_its_shared_service_account_client(monkeypatch):
+    class Request:
+        def execute(self):
+            return {"values": [["2026-09-28", "12.50", "Lunch", "Food"]]}
+
+    class Values:
+        def get(self, **kwargs):
+            return Request()
+
+    class Sheets:
+        def spreadsheets(self):
+            return type("Sheets", (), {"values": lambda self: Values()})()
+
+    repo = GoogleSheetsRepository(credentials_path="/configured/service-account.json")
+    captured = {}
+
+    def build_service(credentials_path):
+        captured["credentials_path"] = credentials_path
+        return Sheets()
+
+    monkeypatch.setattr(
+        "finance_assistant.infrastructure.repositories.google_sheets_repository.build_sheets_service",
+        build_service,
+    )
+
+    assert repo.get_sheet("spreadsheet-123", "Despesas") == [
+        ["2026-09-28", "12.50", "Lunch", "Food"]
+    ]
+    assert captured == {"credentials_path": "/configured/service-account.json"}
