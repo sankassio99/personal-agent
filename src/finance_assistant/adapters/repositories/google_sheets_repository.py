@@ -5,21 +5,17 @@ from __future__ import annotations
 import logging
 import os
 from typing import Any
-from google.oauth2 import service_account
-from googleapiclient.discovery import build
 
-from finance_assistant.adapters.agents.tools.add_expense_tool import _get_sheets_service
+from finance_assistant.adapters.google_sheets_auth import build_sheets_service
 
 logger = logging.getLogger(__name__)
-
-SCOPES = ["https://www.googleapis.com/auth/spreadsheets"]
 
 
 class GoogleSheetsRepository:
     """Thin repository wrapper for the Google Sheets API."""
 
     def __init__(self, credentials_path: str | None = None):
-        self.credentials_path = os.getenv("GOOGLE_APPLICATION_CREDENTIALS")
+        self.credentials_path = credentials_path or os.getenv("GOOGLE_APPLICATION_CREDENTIALS")
 
     def get_sheet(self, spreadsheet_id: str | None, sheet_name: str, filter: Any | None = None) -> list[list[Any]]:
         """Return rows from a sheet, optionally filtered by a simple predicate."""
@@ -31,7 +27,7 @@ class GoogleSheetsRepository:
 
         try:
             result = (
-                _get_sheets_service()
+                service
                 .spreadsheets()
                 .values()
                 .get(spreadsheetId=spreadsheet_id, range=range_name)
@@ -82,15 +78,5 @@ class GoogleSheetsRepository:
         return None
 
     def _build_service(self):
-        """Build Google Sheets API client using app creds or ADC."""
-        if self.credentials_path:
-            try:
-                credentials = service_account.Credentials.from_service_account_file(
-                    self.credentials_path,
-                    scopes=SCOPES,
-                )
-                return build("sheets", "v4", credentials=credentials)
-            except Exception as exc:  # pragma: no cover - defensive fallback
-                logger.warning("Falling back to ADC because service account credentials are invalid: %s", exc)
-
-        return build("sheets", "v4")
+        """Build Google Sheets API client using the shared service account."""
+        return build_sheets_service(self.credentials_path)
