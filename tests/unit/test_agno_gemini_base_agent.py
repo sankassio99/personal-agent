@@ -3,7 +3,13 @@ import importlib
 from types import SimpleNamespace
 from unittest.mock import AsyncMock
 
-from finance_assistant.application.handlers.telegram_handlers import build_start_message, markdown_to_telegram_html
+import pytest
+
+from finance_assistant.application.handlers.telegram_handlers import (
+    build_help_message,
+    build_start_message,
+    markdown_to_telegram_html,
+)
 from finance_assistant.infrastructure.agents.speech_to_text_agent import SpeechToTextAgent
 from finance_assistant.application.services.telegram_adapter_service import TelegramAdapterService
 from finance_assistant.infrastructure.agents.add_expense_tool import add_expense
@@ -121,6 +127,8 @@ def test_base_agent_create_agent_accepts_spreadsheet_range_override(monkeypatch)
     assert agent.tools[1].name == "get_last_expense"
     assert agent.tools[2].name == "add_expense"
     assert agent.tools[3].name == "validate_expense_row"
+    assert agent.tools[4].name == "get_last_income"
+    assert agent.tools[5].name == "add_income"
 
 
 def test_get_last_expense_reads_the_last_non_empty_sheet_row(monkeypatch):
@@ -220,6 +228,39 @@ def test_handle_recurring_forwards_recurring_range_override(monkeypatch):
 
     assert captured["spreadsheet_range"] == handlers.RECURRING_SPREADSHEET_RANGE
     assert captured["instructions"] == handlers.build_instructions("sheet-id", handlers.RECURRING_SPREADSHEET_RANGE)
+
+
+def test_handle_income_forwards_income_range_override(monkeypatch):
+    from finance_assistant.application.handlers import telegram_handlers as handlers
+
+    captured = {}
+
+    class DummyFinanceAgent:
+        def __init__(self, instructions=None, spreadsheet_range=None):
+            captured["instructions"] = instructions
+            captured["spreadsheet_range"] = spreadsheet_range
+
+        def respond(self, message):
+            return "ok"
+
+    reply_text = AsyncMock()
+    update = SimpleNamespace(
+        effective_user=SimpleNamespace(id=123456789),
+        message=SimpleNamespace(text="/rendimentos", reply_text=reply_text),
+    )
+
+    monkeypatch.setattr(handlers.telegram_adapter_service, "resolve_spreadsheet_id", lambda telegram_user_id: "sheet-id")
+    monkeypatch.setattr(handlers, "FinanceAgent", DummyFinanceAgent)
+
+    asyncio.run(handlers.handle_income(update, None))
+
+    assert captured["spreadsheet_range"] == handlers.INCOME_SPREADSHEET_RANGE
+    assert "get_last_income" in captured["instructions"]
+
+
+def test_help_message_includes_rendimentos_command():
+    assert "/rendimentos" in build_help_message()
+    assert "registra rendimentos" in build_help_message()
 
 
 def test_handle_audio_message_transcribes_audio_then_forwards_transcript_to_finance_agent(monkeypatch):
@@ -374,6 +415,123 @@ def test_add_expense_tool_uses_google_sheets_append_support(monkeypatch):
     assert captured["valueInputOption"] == "USER_ENTERED"
     assert captured["insertDataOption"] == "INSERT_ROWS"
     assert captured["body"] == {"values": [["🤖", "2026-09-14", 10.25, "coffee", "food"]]}
+
+
+def test_get_last_income_reads_rendimentos_columns_for_mapped_user(monkeypatch):
+    from finance_assistant.infrastructure.agents.get_last_income_tool import get_last_income
+
+    captured = {}
+
+    class Request:
+        def execute(self):
+            return {"values": [["14/09/2026", "100.00", "Salary", "Work"]]}
+
+    class Values:
+        def get(self, spreadsheetId, range):
+            captured["spreadsheetId"] = spreadsheetId
+            captured["range"] = range
+            return Request()
+
+    class Sheets:
+        def spreadsheets(self):
+            return SimpleNamespace(values=lambda: Values())
+
+    monkeypatch.setattr(
+        "finance_assistant.infrastructure.agents.get_last_income_tool._get_sheets_service",
+        lambda: Sheets(),
+    )
+    monkeypatch.setattr(
+        "finance_assistant.infrastructure.agents.get_last_income_tool.TelegramAdapterService",
+        lambda: SimpleNamespace(resolve_spreadsheet_id=lambda telegram_user_id: "sheet-id"),
+    )
+
+    assert get_last_income.entrypoint(telegram_user_id=123) == "Last income: 14/09/2026 | 100.00 | Salary | Work"
+    assert captured == {"spreadsheetId": "sheet-id", "range": "Rendimentos!B:E"}
+
+
+def test_get_last_income_rejects_unmapped_user():
+    from finance_assistant.infrastructure.agents.get_last_income_tool import get_last_income
+
+    with pytest.raises(ValueError, match="No Google spreadsheet id"):
+        get_last_income.entrypoint(telegram_user_id=999999999)
+
+
+def test_add_income_appends_to_rendimentos_columns(monkeypatch):
+    from finance_assistant.infrastructure.agents.add_income_tool import add_income
+
+    captured = {}
+
+    class Request:
+        def execute(self):
+            return {"updates": {"updatedRange": "Rendimentos!B4:E4"}}
+
+    class Values:
+        def append(self, **kwargs):
+            captured.update(kwargs)
+            return Request()
+
+    class Sheets:
+        def spreadsheets(self):
+            return SimpleNamespace(values=lambda: Values())
+
+    monkeypatch.setattr(
+        "finance_assistant.infrastructure.agents.add_income_tool._get_sheets_service",
+        lambda: Sheets(),
+    )
+    monkeypatch.setattr(
+        "finance_assistant.infrastructure.agents.add_income_tool.TelegramAdapterService",
+        lambda: SimpleNamespace(resolve_spreadsheet_id=lambda telegram_user_id: "sheet-id"),
+    )
+
+    assert "Income added successfully" in add_income.entrypoint(
+        date="14/09/2026",
+        amount=100.0,
+        description="Salary",
+        category="Work",
+        telegram_user_id=123,
+    )
+    assert captured == {
+        "spreadsheetId": "sheet-id",
+        "range": "Rendimentos!B:E",
+        "valueInputOption": "USER_ENTERED",
+        "insertDataOption": "INSERT_ROWS",
+        "body": {"values": [["14/09/2026", 100.0, "Salary", "Work"]]},
+    }
+
+
+def test_add_income_propagates_google_sheets_failure(monkeypatch):
+    from finance_assistant.infrastructure.agents.add_income_tool import add_income
+
+    class Values:
+        def append(self, **kwargs):
+            raise RuntimeError("write failed")
+
+    class Sheets:
+        def spreadsheets(self):
+            return SimpleNamespace(values=lambda: Values())
+
+    monkeypatch.setattr(
+        "finance_assistant.infrastructure.agents.add_income_tool._get_sheets_service",
+        lambda: Sheets(),
+    )
+
+    with pytest.raises(RuntimeError, match="Unable to append the income record"):
+        add_income.entrypoint(
+            date="14/09/2026",
+            amount=100.0,
+            description="Salary",
+            category="Work",
+            spreadsheet_id="sheet-id",
+        )
+
+
+def test_income_tools_reuse_the_expense_google_sheets_service_builder():
+    from finance_assistant.infrastructure.agents.add_expense_tool import _get_sheets_service as expense_service
+    from finance_assistant.infrastructure.agents.add_income_tool import _get_sheets_service as income_append_service
+    from finance_assistant.infrastructure.agents.get_last_income_tool import _get_sheets_service as income_read_service
+
+    assert income_append_service is expense_service
+    assert income_read_service is expense_service
 
 
 def test_telegram_adapter_service_returns_spreadsheet_for_known_telegram_user():
