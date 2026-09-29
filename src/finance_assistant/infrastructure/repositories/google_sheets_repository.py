@@ -53,6 +53,34 @@ class GoogleSheetsRepository:
                 filtered_rows.append(row)
         return filtered_rows
 
+    def get_category_budget(self, spreadsheet_id: str | None, category: str) -> dict[str, Any] | None:
+        """Return the budget values for one category in the client's summary sheet."""
+        if not spreadsheet_id:
+            raise ValueError("spreadsheet_id is required to read the Google Sheet.")
+
+        try:
+            result = (
+                self._build_service()
+                .spreadsheets()
+                .values()
+                .get(spreadsheetId=spreadsheet_id, range="'Sumário'!B27:F42")
+                .execute()
+            )
+        except Exception as exc:
+            raise RuntimeError(
+                f"Failed to read category budgets from spreadsheet '{spreadsheet_id}'."
+            ) from exc
+
+        for row in result.get("values", []):
+            if row and str(row[0]).strip() == category.strip():
+                return {
+                    "category": row[0],
+                    "planned": row[2] if len(row) > 2 else None,
+                    "actual": row[3] if len(row) > 3 else None,
+                    "difference": row[4] if len(row) > 4 else None,
+                }
+        return None
+
     def _build_service(self):
         """Build Google Sheets API client using app creds or ADC."""
         if self.credentials_path:
