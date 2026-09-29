@@ -22,6 +22,7 @@ telegram_adapter_service = TelegramAdapterService()
 SUMMARY_SPREADSHEET_RANGE = "'Sumário'!B18:H"
 EXPENSES_RANGE_NAME = "'Despesas'!B1:E"
 RECURRING_SPREADSHEET_RANGE = "'Recorrentes'!A1:E50"
+INCOME_SPREADSHEET_RANGE = "'Rendimentos'!B:E"
 
 def build_start_message(telegram_user_id: int | str | None = None) -> str:
     """Return the Telegram start-command onboarding message with admin contact guidance."""
@@ -63,6 +64,13 @@ def build_instructions(spreadsheet_id: str | None = None, spreadsheet_range: str
     if spreadsheet_range:
         instructions += " The active spreadsheet range is: " + spreadsheet_range + "."
 
+    if spreadsheet_range == INCOME_SPREADSHEET_RANGE:
+        instructions += (
+            " This is the income workflow. Read and record income only in the Rendimentos tab. "
+            "Use get_last_income to inspect the existing format before using add_income. "
+            "Use DD/MM/YYYY for dates and use the current date when one is not supplied."
+        )
+
     return instructions
 
 
@@ -73,6 +81,7 @@ def build_help_message() -> str:
         "• /start — inicia o cadastro e mostra a orientação de registro\n"
         "• /sumario — usa a faixa de planilha do resumo do usuário\n"
         "• /recorrente — usa a faixa de planilha recorrente do usuário\n"
+        "• /rendimentos — consulta e registra rendimentos do usuário\n"
         "• /ajuda — mostra esta lista de comandos"
     )
 
@@ -106,6 +115,13 @@ async def handle_recurring(update: Update, context: ContextTypes.DEFAULT_TYPE) -
     logger.info("Telegram /recurring command received.")
     msg = update.message.text or ""
     await _dispatch_finance_reply(update, msg, RECURRING_SPREADSHEET_RANGE)
+
+
+async def handle_income(update: Update, context: ContextTypes.DEFAULT_TYPE) -> None:
+    """Handle /rendimentos using the user's income worksheet tab."""
+    logger.info("Telegram /rendimentos command received.")
+    msg = update.message.text or ""
+    await _dispatch_finance_reply(update, msg, INCOME_SPREADSHEET_RANGE)
 
 
 async def handle_message(update: Update, context: ContextTypes.DEFAULT_TYPE) -> None:
