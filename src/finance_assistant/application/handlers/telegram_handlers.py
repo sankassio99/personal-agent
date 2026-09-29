@@ -68,6 +68,10 @@ def build_instructions(spreadsheet_id: str | None = None, spreadsheet_range: str
         instructions += (
             " This is the income workflow. Read and record income only in the Rendimentos tab. "
             "Use get_last_income to inspect the existing format before using add_income. "
+            "If the user does not provide a category, use get_available_categories with entry_type "
+            "'income' before inferring one. Use only a returned category; if none matches, ask the "
+            "user for a category and do not add the income. Preserve a category explicitly provided "
+            "by the user. "
             "Use DD/MM/YYYY for dates and use the current date when one is not supplied."
         )
 
