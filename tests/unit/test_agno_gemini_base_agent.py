@@ -129,6 +129,7 @@ def test_base_agent_create_agent_accepts_spreadsheet_range_override(monkeypatch)
     assert agent.tools[3].name == "validate_expense_row"
     assert agent.tools[4].name == "get_last_income"
     assert agent.tools[5].name == "add_income"
+    assert agent.tools[6].name == "get_available_categories"
 
 
 def test_get_last_expense_reads_the_last_non_empty_sheet_row(monkeypatch):
@@ -256,6 +257,7 @@ def test_handle_income_forwards_income_range_override(monkeypatch):
 
     assert captured["spreadsheet_range"] == handlers.INCOME_SPREADSHEET_RANGE
     assert "get_last_income" in captured["instructions"]
+    assert "get_available_categories" in captured["instructions"]
 
 
 def test_help_message_includes_rendimentos_command():
@@ -523,6 +525,105 @@ def test_add_income_propagates_google_sheets_failure(monkeypatch):
             category="Work",
             spreadsheet_id="sheet-id",
         )
+
+
+@pytest.mark.parametrize(
+    ("entry_type", "expected_range", "values", "expected_message"),
+    [
+        (
+            "expense",
+            "Sumário!B30:B42",
+            [["Supermercado"], [], [" Transporte "]],
+            "Available expense categories: Supermercado, Transporte",
+        ),
+        (
+            "income",
+            "Sumário!B49:B53",
+            [["Salário"], [""], ["Freelance"]],
+            "Available income categories: Salário, Freelance",
+        ),
+    ],
+)
+def test_get_available_categories_reads_the_configured_summary_range(
+    monkeypatch,
+    entry_type,
+    expected_range,
+    values,
+    expected_message,
+):
+    from finance_assistant.infrastructure.agents.get_available_categories_tool import get_available_categories
+
+    captured = {}
+
+    class Request:
+        def execute(self):
+            return {"values": values}
+
+    class SheetsValues:
+        def get(self, spreadsheetId, range):
+            captured["spreadsheetId"] = spreadsheetId
+            captured["range"] = range
+            return Request()
+
+    class Sheets:
+        def spreadsheets(self):
+            return SimpleNamespace(values=lambda: SheetsValues())
+
+    monkeypatch.setattr(
+        "finance_assistant.infrastructure.agents.get_available_categories_tool._get_sheets_service",
+        lambda: Sheets(),
+    )
+    monkeypatch.setattr(
+        "finance_assistant.infrastructure.agents.get_available_categories_tool.TelegramAdapterService",
+        lambda: SimpleNamespace(resolve_spreadsheet_id=lambda telegram_user_id: "sheet-id"),
+    )
+
+    assert get_available_categories.entrypoint(entry_type, telegram_user_id=123) == expected_message
+    assert captured == {"spreadsheetId": "sheet-id", "range": expected_range}
+
+
+def test_get_available_categories_rejects_unmapped_user_without_sheets_request(monkeypatch):
+    from finance_assistant.infrastructure.agents.get_available_categories_tool import get_available_categories
+
+    monkeypatch.setattr(
+        "finance_assistant.infrastructure.agents.get_available_categories_tool.TelegramAdapterService",
+        lambda: SimpleNamespace(resolve_spreadsheet_id=lambda telegram_user_id: None),
+    )
+    monkeypatch.setattr(
+        "finance_assistant.infrastructure.agents.get_available_categories_tool._get_sheets_service",
+        lambda: pytest.fail("Google Sheets must not be accessed for an unmapped user."),
+    )
+
+    with pytest.raises(ValueError, match="No Google spreadsheet id"):
+        get_available_categories.entrypoint("expense", telegram_user_id=999999999)
+
+
+def test_get_available_categories_propagates_google_sheets_failures(monkeypatch):
+    from finance_assistant.infrastructure.agents.get_available_categories_tool import get_available_categories
+
+    class SheetsValues:
+        def get(self, **kwargs):
+            raise RuntimeError("read failed")
+
+    class Sheets:
+        def spreadsheets(self):
+            return SimpleNamespace(values=lambda: SheetsValues())
+
+    monkeypatch.setattr(
+        "finance_assistant.infrastructure.agents.get_available_categories_tool._get_sheets_service",
+        lambda: Sheets(),
+    )
+
+    with pytest.raises(RuntimeError, match="Unable to read expense categories"):
+        get_available_categories.entrypoint("expense", spreadsheet_id="sheet-id")
+
+
+def test_expense_prompt_requires_category_retrieval_only_when_omitted():
+    from finance_assistant.infrastructure.agents.prompts import FINANCE_ASSISTANT_PROMPT
+
+    assert 'get_available_categories with entry_type "expense"' in FINANCE_ASSISTANT_PROMPT
+    assert "Preserve a category explicitly provided by the user." in FINANCE_ASSISTANT_PROMPT
+    assert "if none matches, ask the user for a category and do not add the expense" in FINANCE_ASSISTANT_PROMPT
 
 
 def test_income_tools_reuse_the_expense_google_sheets_service_builder():
