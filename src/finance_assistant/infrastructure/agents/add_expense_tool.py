@@ -5,46 +5,18 @@ import os
 from typing import Any
 
 from agno.tools import tool
-from google.oauth2 import service_account
-from googleapiclient.discovery import build
 
 from finance_assistant.application.services.telegram_adapter_service import TelegramAdapterService
+from finance_assistant.infrastructure.google_sheets_auth import build_sheets_service
 
 logger = logging.getLogger(__name__)
 
 SHEET_NAME = os.getenv("EXPENSE_SHEET_NAME", "Despesas")
-SCOPES = ["https://www.googleapis.com/auth/spreadsheets"]
 
 
 def _get_sheets_service() -> Any:
-    """Return a Google Sheets service using a service-account credential if configured.
-
-    If the environment points at a malformed/non-service-account file, fall back
-    to the normal Google API client builder so the add_expense tool does not
-    crash with MalformedError and block the workflow.
-    """
-    credential_path = os.getenv("GOOGLE_APPLICATION_CREDENTIALS")
-    if credential_path:
-        try:
-            credentials = service_account.Credentials.from_service_account_file(
-                credential_path,
-                scopes=SCOPES,
-            )
-            return build("sheets", "v4", credentials=credentials)
-        except Exception as exc:
-            logger.warning(
-                "Invalid or malformed GOOGLE_APPLICATION_CREDENTIALS file at %s. "
-                "Falling back to Application Default Credentials. Error: %s",
-                credential_path,
-                exc,
-            )
-
-    try:
-        return build("sheets", "v4")
-    except Exception as exc:
-        raise RuntimeError(
-            f"Unable to build Google Sheets service with default credentials: {exc}"
-        ) from exc
+    """Return a Google Sheets service using the shared service account."""
+    return build_sheets_service()
 
 
 @tool
@@ -96,7 +68,7 @@ def add_expense(
         logger.info("Google Sheets service built successfully for spreadsheet_id=%s", spreadsheet_id)
     except Exception as exc:
         logger.exception("Unable to build Google Sheets service for spreadsheet_id=%s", spreadsheet_id)
-        raise RuntimeError(f"Unable to build Google Sheets service with default credentials: {exc}") from exc
+        raise RuntimeError(f"Unable to build Google Sheets service: {exc}") from exc
 
     try:
         logger.info("Appending expense row to Google Sheets")
