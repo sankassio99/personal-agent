@@ -29,6 +29,12 @@ A slice owns its use-case inputs and results, application workflow, feature
 specific adapters, and tests. Shared configuration, transport clients, and
 cross-feature abstractions remain outside individual slices.
 
+Use ports-and-adapters boundaries within and around each slice. Business code
+depends on generic capabilities such as `ExpenseLedger`, `UserRegistry`, and
+`MessageGateway`, never on a provider such as Google Sheets, Firebase,
+PostgreSQL, Telegram, or WhatsApp. Provider implementations live at the
+application edge and are selected only by the composition root.
+
 ## Proposed Structure
 
 ```text
@@ -37,39 +43,57 @@ src/finance_assistant/
     application.py
   shared/
     config.py
-    user_registry.py
-    sheets_client.py
-    telegram_client.py
     agent/
       finance_agent.py
       prompts.py
+  adapters/
+    messaging/
+      telegram_gateway.py
+      whatsapp_gateway.py
+    persistence/
+      google_sheets/
+        expense_ledger.py
+        income_ledger.py
+        budget_repository.py
+      firebase/
+        expense_ledger.py
+        income_ledger.py
+        budget_repository.py
+      postgresql/
+        expense_ledger.py
+        income_ledger.py
+        budget_repository.py
+    identity/
+      configured_user_registry.py
   features/
     expenses/
       commands.py
       service.py
-      repository.py
-      sheets_repository.py
+      ports.py
       agent_tools.py
-      telegram.py
     income/
       commands.py
       service.py
-      repository.py
-      sheets_repository.py
+      ports.py
       agent_tools.py
-      telegram.py
     budget_alerts/
       service.py
       policies.py
-      repository.py
+      ports.py
     daily_summary/
       service.py
       formatter.py
       job.py
       scheduler.py
+      ports.py
     onboarding/
       service.py
-      telegram.py
+      ports.py
+  delivery/
+    telegram/
+      handlers.py
+    whatsapp/
+      webhook.py
   main.py
 tests/
   features/
@@ -80,23 +104,24 @@ tests/
     onboarding/
 ```
 
-The exact file names may evolve. The important boundary is that a feature's
-workflow and tests are colocated, rather than split across generic technical
-layers.
+The exact file names may evolve. The important boundaries are that a feature's
+workflow and tests are colocated, and that vendor-specific code stays in
+`adapters` or `delivery`, outside feature services.
 
 ## Dependency Rules
 
-1. Telegram and Agno/MCP modules are input/output adapters. They translate
-   incoming data and call an application service; they do not contain business
-   workflow or construct their own dependencies.
+1. Telegram, WhatsApp, Agno, and MCP modules are input/output adapters. They
+   translate incoming data and call an application service; they do not contain
+   business workflow or construct their own dependencies.
 2. Feature services depend on explicit interfaces defined with
-   `typing.Protocol`, such as `ExpenseRepository`, `UserRegistry`, and
-   `MessageSender`. They must not import Google Sheets or Telegram SDKs.
-3. Google Sheets and Telegram SDK implementations satisfy those interfaces and
-   remain replaceable in tests.
-4. `bootstrap/application.py` is the single composition root. It creates
-   concrete clients and services, then registers Telegram handlers and
-   schedules jobs.
+   `typing.Protocol`, such as `ExpenseLedger`, `UserRegistry`, and
+   `MessageGateway`. They must not import a provider SDK or provider-specific
+   type.
+3. Google Sheets, Firebase, PostgreSQL, Telegram, and WhatsApp implementations
+   satisfy those interfaces and remain replaceable in tests.
+4. `bootstrap/application.py` is the single composition root. It reads
+   provider configuration, creates the selected concrete adapters, injects them
+   into feature services, then registers delivery handlers and schedules jobs.
 5. A shared module is justified only when it supports more than one slice.
    Do not create generic abstractions before a second use case needs them.
 
@@ -118,21 +143,40 @@ class RecordExpense:
     category: str
 
 
-class ExpenseRepository(Protocol):
-    def append(self, spreadsheet_id: str, expense: RecordExpense) -> None: ...
+class ExpenseLedger(Protocol):
+    def append(self, account_id: str, expense: RecordExpense) -> None: ...
 
 
 class UserRegistry(Protocol):
-    def spreadsheet_for(self, user_id: int) -> str | None: ...
+    def account_for(self, user_id: int) -> str | None: ...
 ```
 
 The `RecordExpenseService` uses these contracts. A Telegram command handler and
 an Agno tool both translate their input into `RecordExpense` and invoke the
 same service, so recording an expense has one implementation regardless of
-entry point.
+entry point. The Google-Sheets adapter can translate the provider-neutral
+account identifier into its spreadsheet identifier internally.
 
 Pydantic is optional. Use it only when external data validation or
 serialization needs exceed small, explicit dataclasses and adapter validation.
+
+## Replacing Providers
+
+Provider replacement changes composition and adapter implementations, not the
+feature workflows:
+
+| Change | Replace | Unchanged |
+| --- | --- | --- |
+| Google Sheets to Firebase | The `ExpenseLedger`, `IncomeLedger`, and budget repository implementations selected in `bootstrap/application.py`. | Expense recording, budget evaluation, summaries, and their tests against ports. |
+| Google Sheets to PostgreSQL | The same persistence adapters; introduce migrations and transaction handling within the PostgreSQL adapter. | Feature service APIs and delivery adapters. |
+| Telegram to WhatsApp | The delivery adapter and provider webhook/polling configuration. | Commands/use cases, persistence adapters, and notification intent. |
+
+The messaging port should express application intent, for example
+`send_text(recipient: UserAddress, text: str)`, rather than Telegram concepts
+such as `chat_id`, `Update`, parse modes, or command handlers. The delivery
+adapter maps the generic intent to Telegram or WhatsApp APIs. Provider-only
+features, such as audio download or HTML formatting, are handled at that
+adapter boundary and converted into a normalized feature input.
 
 ## Initial Slice Boundaries
 
@@ -165,25 +209,32 @@ latency requirements justify it.
 
 ## Incremental Migration Plan
 
-1. Create `features/expenses` and move the recording workflow behind
-   `RecordExpenseService`. Keep compatibility wrappers for existing imports
-   until all callers are migrated.
-2. Move budget evaluation and notification into `features/budget_alerts`.
+1. Define provider-neutral ports (`UserRegistry`, `ExpenseLedger`,
+   `IncomeLedger`, `BudgetRepository`, and `MessageGateway`) in the owning
+   feature packages. Create Google Sheets and Telegram implementations behind
+   those ports, while keeping compatibility wrappers for existing imports.
+2. Create `features/expenses` and move the recording workflow behind
+   `RecordExpenseService`. Do not expose Google Sheets identifiers in its
+   command or result types.
+3. Move budget evaluation and notification into `features/budget_alerts`.
    Inject it into the expense slice through an event handler or notifier
    interface, preserving the existing best-effort notification behavior.
-3. Extract `features/daily_summary`, separating its scheduled-job adapter from
+4. Extract `features/daily_summary`, separating its scheduled-job adapter from
    summary creation and message delivery.
-4. Migrate income, recurring entries, summary commands, and onboarding one
+5. Migrate income, recurring entries, summary commands, and onboarding one
    capability at a time.
-5. Move dependency construction and Telegram handler registration to
+6. Move dependency construction and delivery-adapter registration to
    `bootstrap/application.py`. Reduce `main.py` to startup orchestration.
-6. Move each feature's unit and integration tests beside its slice. Delete old
+7. Move each feature's unit and integration tests beside its slice. Delete old
    layer-based modules only after callers and tests have moved.
 
 ## Benefits
 
 - Feature changes have a smaller, more discoverable change surface.
 - Telegram and agent/MCP entry points share the same business implementation.
+- Telegram and WhatsApp can coexist during a delivery-channel migration.
+- Google Sheets, Firebase, and PostgreSQL are provider implementations, not
+  architectural dependencies of the finance features.
 - Unit tests replace Google Sheets, Telegram, and registry integrations through
   small protocol-based fakes.
 - Feature ownership and review become clearer as the assistant gains
@@ -198,6 +249,8 @@ latency requirements justify it.
 | Large folder move creates regressions and merge conflicts. | Migrate one feature at a time and retain compatibility wrappers temporarily. |
 | Feature packages duplicate shared behavior. | Extract only demonstrated, cross-feature mechanisms into `shared`. |
 | Event handling adds unnecessary complexity. | Start with synchronous in-process handlers; add durable asynchronous delivery only for demonstrated operational needs. |
+| Provider abstractions mirror a vendor API and prevent replacement. | Design ports in the language of the finance feature; keep provider identifiers and SDK types inside adapters. |
+| A messaging provider has different capabilities from Telegram. | Model only common business intents in `MessageGateway`; add narrowly scoped optional capabilities at the delivery edge. |
 | User registration data remains coupled to application code. | Define a `UserRegistry` interface and move its implementation to configuration or persistent storage without exposing identifiers in source or logs. |
 
 ## Acceptance Criteria
@@ -205,11 +258,14 @@ latency requirements justify it.
 The migration is complete when:
 
 1. Each feature can be located under `features/<feature-name>`.
-2. Telegram and Agno/MCP adapters call a feature service rather than performing
+2. Telegram, WhatsApp, and Agno/MCP adapters call a feature service rather than performing
    business workflow directly.
-3. Feature services have no direct dependency on Telegram or Google SDKs.
+3. Feature services have no direct dependency on Telegram, WhatsApp, Google,
+   Firebase, or PostgreSQL SDKs and identifiers.
 4. Dependency construction occurs in one composition root.
-5. The current expense, budget alert, daily summary, income, and onboarding
+5. Changing the selected persistence or messaging provider requires no feature
+   service change.
+6. The current expense, budget alert, daily summary, income, and onboarding
    behaviors remain covered by focused unit or integration tests.
-6. Runtime behavior remains unchanged unless a separate approved change
+7. Runtime behavior remains unchanged unless a separate approved change
    explicitly modifies it.
