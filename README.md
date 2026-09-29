@@ -65,7 +65,6 @@ export GOOGLE_SHEETS_CREDENTIALS=/path/to/credentials.json
 A launcher script is included in the repository root to start the app in the same background style described in the VPS notes:
 
 ```bash
-cd /path/to/your/project
 chmod +x start_vps.sh
 ./start_vps.sh
 ```
