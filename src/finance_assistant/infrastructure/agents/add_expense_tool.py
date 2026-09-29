@@ -2,6 +2,8 @@ from __future__ import annotations
 
 import logging
 import os
+from contextlib import contextmanager
+from contextvars import ContextVar
 from typing import Any
 
 from agno.tools import tool
@@ -14,6 +16,17 @@ logger = logging.getLogger(__name__)
 
 SHEET_NAME = os.getenv("EXPENSE_SHEET_NAME", "Despesas")
 SCOPES = ["https://www.googleapis.com/auth/spreadsheets"]
+_active_telegram_user_id: ContextVar[int | str | None] = ContextVar("active_telegram_user_id", default=None)
+
+
+@contextmanager
+def telegram_user_context(telegram_user_id: int | str | None):
+    """Expose the Telegram user to tools invoked during this request."""
+    token = _active_telegram_user_id.set(telegram_user_id)
+    try:
+        yield
+    finally:
+        _active_telegram_user_id.reset(token)
 
 
 def _get_sheets_service() -> Any:
@@ -77,6 +90,9 @@ def add_expense(
     The tool automatically appends the expense to the next available row.
     Never specify a row number to this helper.
     """
+    if telegram_user_id is None:
+        telegram_user_id = _active_telegram_user_id.get()
+
     logger.info(
         "Starting add_expense tool for telegram_user_id=%s, sheet_name=%s, date=%s, amount=%s, description=%s, category=%s",
         telegram_user_id,

@@ -1,3 +1,7 @@
+import asyncio
+from types import SimpleNamespace
+from unittest.mock import AsyncMock
+
 import pytest
 
 from finance_assistant.application.services import budget_notification_service, daily_summary_job
@@ -106,6 +110,44 @@ def test_failed_expense_write_does_not_look_up_or_notify_budget(monkeypatch):
 
     assert events == ["write"]
     assert messages == []
+
+
+def test_telegram_handler_passes_user_context_to_expense_notification(monkeypatch):
+    from finance_assistant.application.handlers import telegram_handlers
+
+    events, messages = configure_expense_workflow(monkeypatch, "95")
+    monkeypatch.setattr(
+        telegram_handlers.telegram_adapter_service,
+        "resolve_spreadsheet_id",
+        lambda telegram_user_id: "client-spreadsheet",
+    )
+
+    class DummyFinanceAgent:
+        def __init__(self, **kwargs):
+            pass
+
+        def respond(self, message):
+            return add_expense_tool.add_expense.entrypoint(
+                date="2026-09-14",
+                amount=10.25,
+                description="groceries",
+                category="Food",
+                spreadsheet_id="client-spreadsheet",
+            )
+
+    monkeypatch.setattr(telegram_handlers, "FinanceAgent", DummyFinanceAgent)
+    reply_text = AsyncMock()
+    user = SimpleNamespace(id="client-1")
+    update = SimpleNamespace(
+        effective_user=user,
+        message=SimpleNamespace(from_user=user, reply_text=reply_text),
+    )
+
+    asyncio.run(telegram_handlers._dispatch_finance_reply(update, "add groceries", "'Sumário'!B18:H"))
+
+    assert events == ["write", "lookup", "notification"]
+    assert messages[0][0] == "client-1"
+    reply_text.assert_awaited_once()
 
 
 @pytest.mark.parametrize("failure", ["lookup", "delivery"])

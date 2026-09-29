@@ -11,6 +11,7 @@ from telegram.constants import ParseMode
 from telegram.ext import ContextTypes
 
 from finance_assistant.application.services.telegram_adapter_service import TelegramAdapterService
+from finance_assistant.infrastructure.agents.add_expense_tool import telegram_user_context
 from finance_assistant.infrastructure.agents.prompts import FINANCE_ASSISTANT_PROMPT
 from finance_assistant.infrastructure.agents.response_agent import FinanceAgent
 from finance_assistant.infrastructure.agents.speech_to_text_agent import SpeechToTextAgent
@@ -216,7 +217,8 @@ async def _dispatch_finance_reply(update: Update, message_text: str, spreadsheet
         instructions=build_instructions(spreadsheet_id, spreadsheet_range),
         spreadsheet_range=spreadsheet_range,
     )
-    reply = finance_agent.respond(message_text)
+    with telegram_user_context(telegram_user_id):
+        reply = finance_agent.respond(message_text)
     reply_html = markdown_to_telegram_html(reply)
     logger.info("Generated reply will be sent back to Telegram as HTML: %s", reply_html)
     await update.message.reply_text(reply_html, parse_mode=ParseMode.HTML)

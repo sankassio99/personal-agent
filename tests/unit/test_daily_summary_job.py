@@ -1,4 +1,6 @@
+import asyncio
 from datetime import date, datetime, time
+from types import SimpleNamespace
 
 import pytest
 
@@ -97,6 +99,41 @@ def test_daily_summary_job_sends_summary_to_telegram_user():
     assert result == [{"date": "2026-09-18", "value": 12.5, "description": "Lunch", "category": "Food"}]
     assert job.telegram_service.calls[0]["chat_id"] == 8910318803
     assert "Lunch" in job.telegram_service.calls[0]["text"]
+
+
+def test_telegram_service_sends_message_when_called_inside_running_event_loop(monkeypatch):
+    outer_loop = None
+    request_loop = None
+
+    class AsyncBot:
+        def __init__(self, token):
+            assert token == "test-token"
+
+        async def send_message(self, chat_id, text, parse_mode):
+            nonlocal request_loop
+            request_loop = asyncio.get_running_loop()
+            assert chat_id == 123
+            assert text == "Budget alert"
+            assert parse_mode == "HTML"
+            return SimpleNamespace(message_id=456)
+
+    monkeypatch.setattr("finance_assistant.application.services.daily_summary_job.Bot", AsyncBot)
+    service = TelegramService(token="test-token")
+
+    async def send_from_running_loop():
+        nonlocal outer_loop
+        outer_loop = asyncio.get_running_loop()
+        return service.send_message(123, "Budget alert")
+
+    result = asyncio.run(send_from_running_loop())
+
+    assert result == {
+        "ok": True,
+        "chat_id": 123,
+        "text": "Budget alert",
+        "message_id": 456,
+    }
+    assert request_loop is not outer_loop
 
 
 def test_daily_summary_job_uses_current_date_for_each_execution(monkeypatch):
