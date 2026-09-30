@@ -4,7 +4,7 @@ from unittest.mock import AsyncMock
 
 import pytest
 
-from finance_assistant.application.services import budget_notification_service, daily_summary_job
+from finance_assistant.application.services import budget_notification_service, telegram_service
 from finance_assistant.infrastructure.agents import add_expense_tool
 
 
@@ -55,7 +55,7 @@ def configure_expense_workflow(monkeypatch, actual, failure=None):
     monkeypatch.setattr(add_expense_tool, "_get_sheets_service", lambda: Sheets())
     monkeypatch.setattr(budget_notification_service, "GoogleSheetsRepository", BudgetRepository)
     monkeypatch.setattr(budget_notification_service, "TelegramAdapterService", TelegramAdapter)
-    monkeypatch.setattr(daily_summary_job, "TelegramService", TelegramService)
+    monkeypatch.setattr(telegram_service, "TelegramService", TelegramService)
 
     return events, messages
 
@@ -113,10 +113,7 @@ def test_failed_expense_write_does_not_look_up_or_notify_budget(monkeypatch):
 
 
 def test_telegram_handler_passes_user_context_to_expense_notification(monkeypatch):
-    from finance_assistant.application.handlers.build_instructions import build_instructions
-    from finance_assistant.application.handlers.build_unregistered_user_message import build_unregistered_user_message
-    from finance_assistant.application.handlers.finance_reply_dispatcher import FinanceReplyDispatcher
-    from finance_assistant.application.handlers.markdown_to_telegram_html import markdown_to_telegram_html
+    from finance_assistant.application.handlers.message_handler import handle_message
     from finance_assistant.application.services.telegram_adapter_service import TelegramAdapterService
 
     events, messages = configure_expense_workflow(monkeypatch, "95")
@@ -136,12 +133,13 @@ def test_telegram_handler_passes_user_context_to_expense_notification(monkeypatc
                 spreadsheet_id="client-spreadsheet",
             )
 
-    dispatcher = FinanceReplyDispatcher(
-        telegram_adapter_service,
+    monkeypatch.setattr(
+        "finance_assistant.application.handlers.message_handler.TelegramAdapterService",
+        lambda: telegram_adapter_service,
+    )
+    monkeypatch.setattr(
+        "finance_assistant.application.handlers.message_handler.FinanceAgent",
         DummyFinanceAgent,
-        build_instructions,
-        build_unregistered_user_message,
-        markdown_to_telegram_html,
     )
     reply_text = AsyncMock()
     user = SimpleNamespace(id="client-1")
@@ -150,7 +148,8 @@ def test_telegram_handler_passes_user_context_to_expense_notification(monkeypatc
         message=SimpleNamespace(from_user=user, reply_text=reply_text),
     )
 
-    asyncio.run(dispatcher.dispatch(update, "add groceries", "'Sumário'!B18:H"))
+    update.message.text = "add groceries"
+    asyncio.run(handle_message(update, None))
 
     assert events == ["write", "lookup", "notification"]
     assert messages[0][0] == "client-1"

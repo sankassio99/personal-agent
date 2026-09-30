@@ -10,7 +10,6 @@ from finance_assistant.application.handlers.build_help_message import build_help
 from finance_assistant.application.handlers.build_instructions import build_instructions
 from finance_assistant.application.handlers.build_start_message import build_start_message
 from finance_assistant.application.handlers.build_unregistered_user_message import build_unregistered_user_message
-from finance_assistant.application.handlers.finance_reply_dispatcher import FinanceReplyDispatcher
 from finance_assistant.application.handlers.markdown_to_telegram_html import markdown_to_telegram_html
 from finance_assistant.application.handlers.message_handler import EXPENSES_SPREADSHEET_RANGE, handle_message
 from finance_assistant.application.handlers.recurring_handler import RECURRING_SPREADSHEET_RANGE, handle_recurring
@@ -226,16 +225,13 @@ def test_handle_recurring_forwards_recurring_range_override(monkeypatch):
 
     telegram_adapter_service = TelegramAdapterService()
     monkeypatch.setattr(telegram_adapter_service, "resolve_spreadsheet_id", lambda telegram_user_id: "sheet-id")
-    dispatcher = FinanceReplyDispatcher(
-        telegram_adapter_service,
-        DummyFinanceAgent,
-        build_instructions,
-        build_unregistered_user_message,
-        markdown_to_telegram_html,
+    monkeypatch.setattr(
+        "finance_assistant.application.handlers.recurring_handler.TelegramAdapterService",
+        lambda: telegram_adapter_service,
     )
     monkeypatch.setattr(
-        "finance_assistant.application.handlers.recurring_handler._build_dispatcher",
-        lambda: dispatcher,
+        "finance_assistant.application.handlers.recurring_handler.FinanceAgent",
+        DummyFinanceAgent,
     )
 
     asyncio.run(handle_recurring(update, None))
@@ -263,16 +259,13 @@ def test_handle_income_forwards_income_range_override(monkeypatch):
 
     telegram_adapter_service = TelegramAdapterService()
     monkeypatch.setattr(telegram_adapter_service, "resolve_spreadsheet_id", lambda telegram_user_id: "sheet-id")
-    dispatcher = FinanceReplyDispatcher(
-        telegram_adapter_service,
-        DummyFinanceAgent,
-        build_instructions,
-        build_unregistered_user_message,
-        markdown_to_telegram_html,
+    monkeypatch.setattr(
+        "finance_assistant.application.handlers.income_handler.TelegramAdapterService",
+        lambda: telegram_adapter_service,
     )
     monkeypatch.setattr(
-        "finance_assistant.application.handlers.income_handler._build_dispatcher",
-        lambda: dispatcher,
+        "finance_assistant.application.handlers.income_handler.FinanceAgent",
+        DummyFinanceAgent,
     )
 
     asyncio.run(handle_income(update, None))
@@ -325,16 +318,13 @@ def test_handle_audio_message_transcribes_audio_then_forwards_transcript_to_fina
 
     telegram_adapter_service = TelegramAdapterService()
     monkeypatch.setattr(telegram_adapter_service, "resolve_spreadsheet_id", lambda telegram_user_id: "sheet-id")
-    dispatcher = FinanceReplyDispatcher(
-        telegram_adapter_service,
-        DummyFinanceAgent,
-        build_instructions,
-        build_unregistered_user_message,
-        lambda reply: reply,
+    monkeypatch.setattr(
+        "finance_assistant.application.handlers.audio_handler.TelegramAdapterService",
+        lambda: telegram_adapter_service,
     )
     monkeypatch.setattr(
-        "finance_assistant.application.handlers.audio_handler._build_dispatcher",
-        lambda: dispatcher,
+        "finance_assistant.application.handlers.audio_handler.FinanceAgent",
+        DummyFinanceAgent,
     )
     monkeypatch.setattr(
         "finance_assistant.application.handlers.audio_handler.SpeechToTextAgent",
@@ -398,16 +388,13 @@ def test_unknown_telegram_user_gets_registration_message_and_skips_agent(monkeyp
 
     telegram_adapter_service = TelegramAdapterService()
     monkeypatch.setattr(telegram_adapter_service, "resolve_spreadsheet_id", lambda telegram_user_id: None)
-    dispatcher = FinanceReplyDispatcher(
-        telegram_adapter_service,
-        DummyFinanceAgent,
-        build_instructions,
-        build_unregistered_user_message,
-        markdown_to_telegram_html,
+    monkeypatch.setattr(
+        "finance_assistant.application.handlers.message_handler.TelegramAdapterService",
+        lambda: telegram_adapter_service,
     )
     monkeypatch.setattr(
-        "finance_assistant.application.handlers.message_handler._build_dispatcher",
-        lambda: dispatcher,
+        "finance_assistant.application.handlers.message_handler.FinanceAgent",
+        DummyFinanceAgent,
     )
 
     asyncio.run(handle_message(update, None))

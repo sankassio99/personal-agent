@@ -39,13 +39,12 @@ application edge and are selected only by the composition root.
 
 ```text
 src/finance_assistant/
-  bootstrap/
-    application.py
   shared/
     config.py
     agent/
       finance_agent.py
       prompts.py
+    tools/
   adapters/
     handlers/
       telegram_handler.py #bot.py
