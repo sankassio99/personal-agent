@@ -10,6 +10,19 @@ from finance_assistant.adapters.agents.add_expense_tool import telegram_user_con
 from finance_assistant.adapters.agents.response_agent import FinanceAgent
 
 INCOME_SPREADSHEET_RANGE = "'Rendimentos'!B:E"
+INCOME_INSTRUCTIONS = (
+    " This is the income workflow. Read and record income only in the Rendimentos tab. "
+    "Use get_last_income to inspect the existing format before using add_income. "
+    "If the user does not provide a category, use get_available_categories with entry_type "
+    "'income' before inferring one. Use only a returned category; if none matches, ask the "
+    "user for a category and do not add the income. Preserve a category explicitly provided "
+    "by the user. Use DD/MM/YYYY for dates and use the current date when one is not supplied."
+)
+
+
+def build_income_instructions(spreadsheet_id: str) -> str:
+    """Build common FinanceAgent instructions plus income workflow rules."""
+    return build_instructions(spreadsheet_id, INCOME_SPREADSHEET_RANGE) + INCOME_INSTRUCTIONS
 
 
 async def handle_income(update, context) -> None:
@@ -24,7 +37,7 @@ async def handle_income(update, context) -> None:
         return
 
     finance_agent = FinanceAgent(
-        instructions=build_instructions(spreadsheet_id, INCOME_SPREADSHEET_RANGE),
+        instructions=build_income_instructions(spreadsheet_id),
         spreadsheet_range=INCOME_SPREADSHEET_RANGE,
     )
     with telegram_user_context(telegram_user_id):
