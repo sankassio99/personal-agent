@@ -37,7 +37,7 @@ def test_recurring_job_scheduler_continues_after_callback_exception(monkeypatch)
             raise RuntimeError("boom")
 
     monkeypatch.setattr(
-        "finance_assistant.application.services.recurring_job_scheduler.time_module.sleep",
+        "finance_assistant.adapters.services.recurring_job_scheduler.time_module.sleep",
         fake_sleep,
     )
 

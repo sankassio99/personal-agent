@@ -156,11 +156,11 @@ def test_get_last_expense_reads_the_last_non_empty_sheet_row(monkeypatch):
             return SimpleNamespace(values=lambda: DummyValues())
 
     monkeypatch.setattr(
-        "finance_assistant.infrastructure.agents.get_last_expense_tool._get_sheets_service",
+        "finance_assistant.adapters.agents.get_last_expense_tool._get_sheets_service",
         lambda: DummySheets(),
     )
     monkeypatch.setattr(
-        "finance_assistant.infrastructure.agents.get_last_expense_tool.TelegramAdapterService",
+        "finance_assistant.adapters.agents.get_last_expense_tool.TelegramAdapterService",
         lambda: SimpleNamespace(resolve_spreadsheet_id=lambda telegram_user_id: "sheet-id"),
     )
 
@@ -188,11 +188,11 @@ def test_validate_expense_row_confirms_the_last_expense_values(monkeypatch):
             return SimpleNamespace(values=lambda: DummyValues())
 
     monkeypatch.setattr(
-        "finance_assistant.infrastructure.agents.validate_expense_row_tool._get_sheets_service",
+        "finance_assistant.adapters.agents.validate_expense_row_tool._get_sheets_service",
         lambda: DummySheets(),
     )
     monkeypatch.setattr(
-        "finance_assistant.infrastructure.agents.validate_expense_row_tool.TelegramAdapterService",
+        "finance_assistant.adapters.agents.validate_expense_row_tool.TelegramAdapterService",
         lambda: SimpleNamespace(resolve_spreadsheet_id=lambda telegram_user_id: "sheet-id"),
     )
 
@@ -430,8 +430,8 @@ def test_add_expense_tool_uses_google_sheets_append_support(monkeypatch):
         def spreadsheets(self):
             return SimpleNamespace(values=lambda: DummyValues())
 
-    monkeypatch.setattr("finance_assistant.infrastructure.agents.add_expense_tool._get_sheets_service", lambda: DummySheets())
-    monkeypatch.setattr("finance_assistant.infrastructure.agents.add_expense_tool.TelegramAdapterService", lambda: SimpleNamespace(resolve_spreadsheet_id=lambda telegram_user_id: "sheet-id"))
+    monkeypatch.setattr("finance_assistant.adapters.agents.add_expense_tool._get_sheets_service", lambda: DummySheets())
+    monkeypatch.setattr("finance_assistant.adapters.agents.add_expense_tool.TelegramAdapterService", lambda: SimpleNamespace(resolve_spreadsheet_id=lambda telegram_user_id: "sheet-id"))
 
     message = add_expense.entrypoint(
         date="2026-09-14",
@@ -469,11 +469,11 @@ def test_get_last_income_reads_rendimentos_columns_for_mapped_user(monkeypatch):
             return SimpleNamespace(values=lambda: Values())
 
     monkeypatch.setattr(
-        "finance_assistant.infrastructure.agents.get_last_income_tool._get_sheets_service",
+        "finance_assistant.adapters.agents.get_last_income_tool._get_sheets_service",
         lambda: Sheets(),
     )
     monkeypatch.setattr(
-        "finance_assistant.infrastructure.agents.get_last_income_tool.TelegramAdapterService",
+        "finance_assistant.adapters.agents.get_last_income_tool.TelegramAdapterService",
         lambda: SimpleNamespace(resolve_spreadsheet_id=lambda telegram_user_id: "sheet-id"),
     )
 
@@ -507,11 +507,11 @@ def test_add_income_appends_to_rendimentos_columns(monkeypatch):
             return SimpleNamespace(values=lambda: Values())
 
     monkeypatch.setattr(
-        "finance_assistant.infrastructure.agents.add_income_tool._get_sheets_service",
+        "finance_assistant.adapters.agents.add_income_tool._get_sheets_service",
         lambda: Sheets(),
     )
     monkeypatch.setattr(
-        "finance_assistant.infrastructure.agents.add_income_tool.TelegramAdapterService",
+        "finance_assistant.adapters.agents.add_income_tool.TelegramAdapterService",
         lambda: SimpleNamespace(resolve_spreadsheet_id=lambda telegram_user_id: "sheet-id"),
     )
 
@@ -543,7 +543,7 @@ def test_add_income_propagates_google_sheets_failure(monkeypatch):
             return SimpleNamespace(values=lambda: Values())
 
     monkeypatch.setattr(
-        "finance_assistant.infrastructure.agents.add_income_tool._get_sheets_service",
+        "finance_assistant.adapters.agents.add_income_tool._get_sheets_service",
         lambda: Sheets(),
     )
 
@@ -600,11 +600,11 @@ def test_get_available_categories_reads_the_configured_summary_range(
             return SimpleNamespace(values=lambda: SheetsValues())
 
     monkeypatch.setattr(
-        "finance_assistant.infrastructure.agents.get_available_categories_tool._get_sheets_service",
+        "finance_assistant.adapters.agents.get_available_categories_tool._get_sheets_service",
         lambda: Sheets(),
     )
     monkeypatch.setattr(
-        "finance_assistant.infrastructure.agents.get_available_categories_tool.TelegramAdapterService",
+        "finance_assistant.adapters.agents.get_available_categories_tool.TelegramAdapterService",
         lambda: SimpleNamespace(resolve_spreadsheet_id=lambda telegram_user_id: "sheet-id"),
     )
 
@@ -616,11 +616,11 @@ def test_get_available_categories_rejects_unmapped_user_without_sheets_request(m
     from finance_assistant.adapters.agents.get_available_categories_tool import get_available_categories
 
     monkeypatch.setattr(
-        "finance_assistant.infrastructure.agents.get_available_categories_tool.TelegramAdapterService",
+        "finance_assistant.adapters.agents.get_available_categories_tool.TelegramAdapterService",
         lambda: SimpleNamespace(resolve_spreadsheet_id=lambda telegram_user_id: None),
     )
     monkeypatch.setattr(
-        "finance_assistant.infrastructure.agents.get_available_categories_tool._get_sheets_service",
+        "finance_assistant.adapters.agents.get_available_categories_tool._get_sheets_service",
         lambda: pytest.fail("Google Sheets must not be accessed for an unmapped user."),
     )
 
@@ -640,7 +640,7 @@ def test_get_available_categories_propagates_google_sheets_failures(monkeypatch)
             return SimpleNamespace(values=lambda: SheetsValues())
 
     monkeypatch.setattr(
-        "finance_assistant.infrastructure.agents.get_available_categories_tool._get_sheets_service",
+        "finance_assistant.adapters.agents.get_available_categories_tool._get_sheets_service",
         lambda: Sheets(),
     )
 
