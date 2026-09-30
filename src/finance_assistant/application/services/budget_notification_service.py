@@ -23,7 +23,7 @@ class BudgetNotificationService:
         self.repository = repository or GoogleSheetsRepository()
         self.telegram_adapter = telegram_adapter or TelegramAdapterService()
         if telegram_service is None:
-            from finance_assistant.application.services.daily_summary_job import TelegramService
+            from finance_assistant.application.services.telegram_service import TelegramService
 
             telegram_service = TelegramService()
         self.telegram_service = telegram_service

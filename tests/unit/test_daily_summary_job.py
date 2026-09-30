@@ -4,10 +4,11 @@ from types import SimpleNamespace
 
 import pytest
 
-from finance_assistant.application.services.daily_summary_job import DailySummaryJob, TelegramService
+from finance_assistant.application.services.daily_summary_job import DailySummaryJob
 from finance_assistant.application.services.daily_summary_message_formatter import DailySummaryMessageFormatter
 from finance_assistant.application.services.daily_summary_service import DailySummaryService
 from finance_assistant.application.services.daily_summary_scheduler import DailySummaryScheduler
+from finance_assistant.application.services.telegram_service import TelegramService
 from finance_assistant.infrastructure.repositories.google_sheets_repository import GoogleSheetsRepository
 
 
@@ -117,7 +118,7 @@ def test_telegram_service_sends_message_when_called_inside_running_event_loop(mo
             assert parse_mode == "HTML"
             return SimpleNamespace(message_id=456)
 
-    monkeypatch.setattr("finance_assistant.application.services.daily_summary_job.Bot", AsyncBot)
+    monkeypatch.setattr("finance_assistant.application.services.telegram_service.Bot", AsyncBot)
     service = TelegramService(token="test-token")
 
     async def send_from_running_loop():
