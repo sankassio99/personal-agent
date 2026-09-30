@@ -12,7 +12,7 @@ from finance_assistant.adapters.agents.response_agent import FinanceAgent
 EXPENSES_SPREADSHEET_RANGE = "'Despesas'!B1:E"
 
 
-async def handle_message(update, context) -> None:
+async def handle_expense_message(update, context) -> None:
     """Forward an ordinary text message using the expense spreadsheet range."""
     message = update.message.text or ""
     user = update.effective_user or update.message.from_user

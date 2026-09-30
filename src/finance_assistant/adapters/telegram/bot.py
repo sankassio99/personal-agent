@@ -5,7 +5,7 @@ from telegram.ext import ApplicationBuilder, CommandHandler, MessageHandler, fil
 from finance_assistant.features.audio.handler import handle_audio_message
 from finance_assistant.features.help.handler import handle_help
 from finance_assistant.features.income.handler import handle_income
-from finance_assistant.features.message.handler import handle_message
+from finance_assistant.features.message.handler import handle_expense_message
 from finance_assistant.features.recurring.handler import handle_recurring
 from finance_assistant.features.start.handler import handle_start
 from finance_assistant.features.summary.handler import handle_summary
@@ -22,6 +22,6 @@ def run_bot() -> None:
     app.add_handler(CommandHandler("recorrente", handle_recurring))
     app.add_handler(CommandHandler("rendimentos", handle_income))
     app.add_handler(CommandHandler("ajuda", handle_help))
-    app.add_handler(MessageHandler(filters.TEXT & ~filters.COMMAND, handle_message))
+    app.add_handler(MessageHandler(filters.TEXT & ~filters.COMMAND, handle_expense_message))
     app.add_handler(MessageHandler(filters.AUDIO | filters.VOICE, handle_audio_message))
     app.run_polling()

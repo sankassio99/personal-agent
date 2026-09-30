@@ -15,7 +15,7 @@ from finance_assistant.adapters.telegram.message_formatter import markdown_to_te
 from finance_assistant.adapters.telegram.telegram_adapter_service import TelegramAdapterService
 from finance_assistant.features.audio.handler import handle_audio_message
 from finance_assistant.features.income.handler import INCOME_SPREADSHEET_RANGE, handle_income
-from finance_assistant.features.message.handler import EXPENSES_SPREADSHEET_RANGE, handle_message
+from finance_assistant.features.message.handler import EXPENSES_SPREADSHEET_RANGE, handle_expense_message
 from finance_assistant.features.recurring.handler import RECURRING_SPREADSHEET_RANGE, handle_recurring
 from finance_assistant.adapters.agents.speech_to_text_agent import SpeechToTextAgent
 from finance_assistant.adapters.agents.add_expense_tool import add_expense
@@ -398,7 +398,7 @@ def test_unknown_telegram_user_gets_registration_message_and_skips_agent(monkeyp
         DummyFinanceAgent,
     )
 
-    asyncio.run(handle_message(update, None))
+    asyncio.run(handle_expense_message(update, None))
 
     reply_text.assert_awaited_once()
     sent_message = reply_text.await_args.args[0]
