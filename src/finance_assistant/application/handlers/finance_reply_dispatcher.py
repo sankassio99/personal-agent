@@ -57,11 +57,20 @@ class FinanceReplyDispatcher:
             await update.message.reply_text(self.unregistered_message_builder(telegram_user_id))
             return
 
+        with self.user_context_factory(telegram_user_id):
+            reply = self.generate_reply(message_text, spreadsheet_range, spreadsheet_id)
+
+        await update.message.reply_text(self.reply_formatter(reply), parse_mode=ParseMode.HTML)
+
+    def generate_reply(
+        self,
+        message_text: str,
+        spreadsheet_range: str,
+        spreadsheet_id: str,
+    ) -> str:
+        """Build the finance agent, execute it in the user's context, and return its reply."""
         finance_agent = self.finance_agent_factory(
             instructions=self.instructions_builder(spreadsheet_id, spreadsheet_range),
             spreadsheet_range=spreadsheet_range,
         )
-        with self.user_context_factory(telegram_user_id):
-            reply = finance_agent.respond(message_text)
-
-        await update.message.reply_text(self.reply_formatter(reply), parse_mode=ParseMode.HTML)
+        return finance_agent.respond(message_text)
