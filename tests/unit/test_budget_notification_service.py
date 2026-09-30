@@ -2,7 +2,7 @@ import logging
 
 import pytest
 
-from finance_assistant.application.services.budget_notification_service import BudgetNotificationService
+from finance_assistant.features.budget_notification.service import BudgetNotificationService
 
 
 class FakeRepository:

@@ -4,12 +4,12 @@ from types import SimpleNamespace
 
 import pytest
 
-from finance_assistant.application.services.daily_summary_job import DailySummaryJob
-from finance_assistant.application.services.daily_summary_message_formatter import DailySummaryMessageFormatter
-from finance_assistant.application.services.daily_summary_service import DailySummaryService
-from finance_assistant.application.services.daily_summary_scheduler import DailySummaryScheduler
-from finance_assistant.application.services.telegram_service import TelegramService
-from finance_assistant.infrastructure.repositories.google_sheets_repository import GoogleSheetsRepository
+from finance_assistant.adapters.telegram.telegram_service import TelegramService
+from finance_assistant.features.daily_summary.formatter import DailySummaryMessageFormatter
+from finance_assistant.features.daily_summary.job import DailySummaryJob
+from finance_assistant.features.daily_summary.scheduler import DailySummaryScheduler
+from finance_assistant.features.daily_summary.service import DailySummaryService
+from finance_assistant.adapters.repositories.google_sheets_repository import GoogleSheetsRepository
 
 
 def test_daily_summary_service_filters_current_day_and_shapes_payload():
@@ -118,7 +118,7 @@ def test_telegram_service_sends_message_when_called_inside_running_event_loop(mo
             assert parse_mode == "HTML"
             return SimpleNamespace(message_id=456)
 
-    monkeypatch.setattr("finance_assistant.application.services.telegram_service.Bot", AsyncBot)
+    monkeypatch.setattr("finance_assistant.adapters.telegram.telegram_service.Bot", AsyncBot)
     service = TelegramService(token="test-token")
 
     async def send_from_running_loop():
@@ -152,7 +152,7 @@ def test_daily_summary_job_uses_current_date_for_each_execution(monkeypatch):
                 ["2026-09-19", "7.40", "Second day", "Transport"],
             ]
 
-    monkeypatch.setattr("finance_assistant.application.services.daily_summary_job.date", FakeDate)
+    monkeypatch.setattr("finance_assistant.features.daily_summary.job.date", FakeDate)
     job = DailySummaryJob(repository=DummyRepository())
 
     first_result = job.run_for_spreadsheet("spreadsheet-123")

@@ -1,4 +1,4 @@
-from finance_assistant.infrastructure.repositories.google_sheets_repository import GoogleSheetsRepository
+from finance_assistant.adapters.repositories.google_sheets_repository import GoogleSheetsRepository
 
 
 class FakeSheetsService:
