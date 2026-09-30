@@ -3,8 +3,8 @@ import logging
 from datetime import time
 
 from finance_assistant.adapters.telegram.bot import run_bot
-from finance_assistant.application.services.daily_summary_job import DailySummaryJob
-from finance_assistant.application.services.daily_summary_scheduler import DailySummaryScheduler
+from finance_assistant.features.daily_summary.job import DailySummaryJob
+from finance_assistant.features.daily_summary.scheduler import DailySummaryScheduler
 
 logging.basicConfig(level=logging.INFO)
 

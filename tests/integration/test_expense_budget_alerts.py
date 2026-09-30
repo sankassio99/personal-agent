@@ -5,7 +5,7 @@ from unittest.mock import AsyncMock
 import pytest
 
 from finance_assistant.adapters.telegram import telegram_service
-from finance_assistant.application.services import budget_notification_service
+from finance_assistant.features.budget_notification import service as budget_notification_service
 from finance_assistant.infrastructure.agents import add_expense_tool
 
 
@@ -135,11 +135,11 @@ def test_telegram_handler_passes_user_context_to_expense_notification(monkeypatc
             )
 
     monkeypatch.setattr(
-        "finance_assistant.application.features.message.handler.TelegramAdapterService",
+        "finance_assistant.features.message.handler.TelegramAdapterService",
         lambda: telegram_adapter_service,
     )
     monkeypatch.setattr(
-        "finance_assistant.application.features.message.handler.FinanceAgent",
+        "finance_assistant.features.message.handler.FinanceAgent",
         DummyFinanceAgent,
     )
     reply_text = AsyncMock()

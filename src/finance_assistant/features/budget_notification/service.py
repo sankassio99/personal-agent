@@ -4,8 +4,8 @@ from __future__ import annotations
 
 import logging
 
-from finance_assistant.application.services.daily_summary_service import DailySummaryService
 from finance_assistant.adapters.telegram.telegram_adapter_service import TelegramAdapterService
+from finance_assistant.features.daily_summary.service import DailySummaryService
 from finance_assistant.infrastructure.repositories.google_sheets_repository import GoogleSheetsRepository
 
 logger = logging.getLogger(__name__)
@@ -72,7 +72,6 @@ class BudgetNotificationService:
             return False
 
         logger.info("Budget alert selected: %s.", alert_level)
-        logger.debug("Sending budget notification through Telegram.")
         self.telegram_service.send_message(telegram_user_id, message)
         logger.info("Budget notification sent successfully.")
         return True

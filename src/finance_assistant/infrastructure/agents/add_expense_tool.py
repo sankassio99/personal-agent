@@ -63,7 +63,7 @@ def _get_sheets_service() -> Any:
 def _notify_budget_usage_after_expense(telegram_user_id: int | str | None, category: str) -> None:
     """Run the budget alert as a best-effort follow-up to a saved expense."""
     try:
-        from finance_assistant.application.services.budget_notification_service import BudgetNotificationService
+        from finance_assistant.features.budget_notification.service import BudgetNotificationService
 
         BudgetNotificationService().notify_if_needed(telegram_user_id, category)
     except Exception:

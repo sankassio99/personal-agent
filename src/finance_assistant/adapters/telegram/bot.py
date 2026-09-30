@@ -2,7 +2,7 @@
 
 from telegram.ext import ApplicationBuilder, CommandHandler, MessageHandler, filters
 
-from finance_assistant.application.features.audio.handler import handle_audio_message
+from finance_assistant.features.audio.handler import handle_audio_message
 from finance_assistant.features.help.handler import handle_help
 from finance_assistant.features.income.handler import handle_income
 from finance_assistant.features.message.handler import handle_message

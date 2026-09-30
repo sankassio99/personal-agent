@@ -1,4 +1,4 @@
-"""Formatter that turns daily summary rows into a Telegram-friendly message."""
+"""Format daily summary rows for Telegram."""
 
 from __future__ import annotations
 
@@ -18,16 +18,11 @@ class DailySummaryMessageFormatter:
 
         lines = [
             f"📋 <b>Resumo de Gastos de Hoje ({today})</b>:",
-            ""
+            "",
         ]
 
         for row in rows:
-            lines.append(
-                f"•  {row['description']}: €{float(row['value']):.2f} ({row['category']})"
-            )
+            lines.append(f"•  {row['description']}: €{float(row['value']):.2f} ({row['category']})")
 
-        lines.extend([
-            "",
-            f"💰 <b>Total gasto hoje</b>: €{total:.2f}",
-        ])
+        lines.extend(["", f"💰 <b>Total gasto hoje</b>: €{total:.2f}"])
         return "\n".join(lines)

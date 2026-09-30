@@ -13,7 +13,7 @@ from finance_assistant.adapters.telegram.message_builders import (
 )
 from finance_assistant.adapters.telegram.message_formatter import markdown_to_telegram_html
 from finance_assistant.adapters.telegram.telegram_adapter_service import TelegramAdapterService
-from finance_assistant.application.features.audio.handler import handle_audio_message
+from finance_assistant.features.audio.handler import handle_audio_message
 from finance_assistant.features.income.handler import INCOME_SPREADSHEET_RANGE, handle_income
 from finance_assistant.features.message.handler import EXPENSES_SPREADSHEET_RANGE, handle_message
 from finance_assistant.features.recurring.handler import RECURRING_SPREADSHEET_RANGE, handle_recurring
@@ -227,11 +227,11 @@ def test_handle_recurring_forwards_recurring_range_override(monkeypatch):
     telegram_adapter_service = TelegramAdapterService()
     monkeypatch.setattr(telegram_adapter_service, "resolve_spreadsheet_id", lambda telegram_user_id: "sheet-id")
     monkeypatch.setattr(
-        "finance_assistant.application.features.recurring.handler.TelegramAdapterService",
+        "finance_assistant.features.recurring.handler.TelegramAdapterService",
         lambda: telegram_adapter_service,
     )
     monkeypatch.setattr(
-        "finance_assistant.application.features.recurring.handler.FinanceAgent",
+        "finance_assistant.features.recurring.handler.FinanceAgent",
         DummyFinanceAgent,
     )
 
@@ -261,11 +261,11 @@ def test_handle_income_forwards_income_range_override(monkeypatch):
     telegram_adapter_service = TelegramAdapterService()
     monkeypatch.setattr(telegram_adapter_service, "resolve_spreadsheet_id", lambda telegram_user_id: "sheet-id")
     monkeypatch.setattr(
-        "finance_assistant.application.features.income.handler.TelegramAdapterService",
+        "finance_assistant.features.income.handler.TelegramAdapterService",
         lambda: telegram_adapter_service,
     )
     monkeypatch.setattr(
-        "finance_assistant.application.features.income.handler.FinanceAgent",
+        "finance_assistant.features.income.handler.FinanceAgent",
         DummyFinanceAgent,
     )
 
@@ -320,15 +320,15 @@ def test_handle_audio_message_transcribes_audio_then_forwards_transcript_to_fina
     telegram_adapter_service = TelegramAdapterService()
     monkeypatch.setattr(telegram_adapter_service, "resolve_spreadsheet_id", lambda telegram_user_id: "sheet-id")
     monkeypatch.setattr(
-        "finance_assistant.application.features.audio.handler.TelegramAdapterService",
+        "finance_assistant.features.audio.handler.TelegramAdapterService",
         lambda: telegram_adapter_service,
     )
     monkeypatch.setattr(
-        "finance_assistant.application.features.audio.handler.FinanceAgent",
+        "finance_assistant.features.audio.handler.FinanceAgent",
         DummyFinanceAgent,
     )
     monkeypatch.setattr(
-        "finance_assistant.application.features.audio.handler.SpeechToTextAgent",
+        "finance_assistant.features.audio.handler.SpeechToTextAgent",
         DummySpeechToTextAgent,
     )
 
@@ -390,11 +390,11 @@ def test_unknown_telegram_user_gets_registration_message_and_skips_agent(monkeyp
     telegram_adapter_service = TelegramAdapterService()
     monkeypatch.setattr(telegram_adapter_service, "resolve_spreadsheet_id", lambda telegram_user_id: None)
     monkeypatch.setattr(
-        "finance_assistant.application.features.message.handler.TelegramAdapterService",
+        "finance_assistant.features.message.handler.TelegramAdapterService",
         lambda: telegram_adapter_service,
     )
     monkeypatch.setattr(
-        "finance_assistant.application.features.message.handler.FinanceAgent",
+        "finance_assistant.features.message.handler.FinanceAgent",
         DummyFinanceAgent,
     )
 

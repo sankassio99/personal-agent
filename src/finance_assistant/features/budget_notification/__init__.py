@@ -1,0 +1,1 @@
+"""Budget notification feature slice."""
