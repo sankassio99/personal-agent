@@ -14,9 +14,9 @@ from finance_assistant.adapters.telegram.message_builders import (
 from finance_assistant.adapters.telegram.message_formatter import markdown_to_telegram_html
 from finance_assistant.adapters.telegram.telegram_adapter_service import TelegramAdapterService
 from finance_assistant.application.features.audio.handler import handle_audio_message
-from finance_assistant.application.features.income.handler import INCOME_SPREADSHEET_RANGE, handle_income
-from finance_assistant.application.features.message.handler import EXPENSES_SPREADSHEET_RANGE, handle_message
-from finance_assistant.application.features.recurring.handler import RECURRING_SPREADSHEET_RANGE, handle_recurring
+from finance_assistant.features.income.handler import INCOME_SPREADSHEET_RANGE, handle_income
+from finance_assistant.features.message.handler import EXPENSES_SPREADSHEET_RANGE, handle_message
+from finance_assistant.features.recurring.handler import RECURRING_SPREADSHEET_RANGE, handle_recurring
 from finance_assistant.infrastructure.agents.speech_to_text_agent import SpeechToTextAgent
 from finance_assistant.infrastructure.agents.add_expense_tool import add_expense
 from finance_assistant.infrastructure.agents.base_agent import BaseAgent

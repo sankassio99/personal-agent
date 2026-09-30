@@ -3,12 +3,12 @@
 from telegram.ext import ApplicationBuilder, CommandHandler, MessageHandler, filters
 
 from finance_assistant.application.features.audio.handler import handle_audio_message
-from finance_assistant.application.features.help.handler import handle_help
-from finance_assistant.application.features.income.handler import handle_income
-from finance_assistant.application.features.message.handler import handle_message
-from finance_assistant.application.features.recurring.handler import handle_recurring
-from finance_assistant.application.features.start.handler import handle_start
-from finance_assistant.application.features.summary.handler import handle_summary
+from finance_assistant.features.help.handler import handle_help
+from finance_assistant.features.income.handler import handle_income
+from finance_assistant.features.message.handler import handle_message
+from finance_assistant.features.recurring.handler import handle_recurring
+from finance_assistant.features.start.handler import handle_start
+from finance_assistant.features.summary.handler import handle_summary
 from finance_assistant.infrastructure.config.settings import settings
 
 def run_bot() -> None:

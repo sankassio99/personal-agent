@@ -115,7 +115,7 @@ def test_failed_expense_write_does_not_look_up_or_notify_budget(monkeypatch):
 
 def test_telegram_handler_passes_user_context_to_expense_notification(monkeypatch):
     from finance_assistant.adapters.telegram.telegram_adapter_service import TelegramAdapterService
-    from finance_assistant.application.features.message.handler import handle_message
+    from finance_assistant.features.message.handler import handle_message
 
     events, messages = configure_expense_workflow(monkeypatch, "95")
     telegram_adapter_service = TelegramAdapterService()
