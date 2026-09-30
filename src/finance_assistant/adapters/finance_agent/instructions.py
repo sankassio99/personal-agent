@@ -1,4 +1,4 @@
-"""Build instructions for the finance response agent."""
+"""Build instructions for the shared finance response agent."""
 
 from __future__ import annotations
 

@@ -5,7 +5,7 @@ from __future__ import annotations
 import logging
 
 from finance_assistant.application.services.daily_summary_service import DailySummaryService
-from finance_assistant.application.services.telegram_adapter_service import TelegramAdapterService
+from finance_assistant.adapters.telegram.telegram_adapter_service import TelegramAdapterService
 from finance_assistant.infrastructure.repositories.google_sheets_repository import GoogleSheetsRepository
 
 logger = logging.getLogger(__name__)
@@ -23,7 +23,7 @@ class BudgetNotificationService:
         self.repository = repository or GoogleSheetsRepository()
         self.telegram_adapter = telegram_adapter or TelegramAdapterService()
         if telegram_service is None:
-            from finance_assistant.application.services.telegram_service import TelegramService
+            from finance_assistant.adapters.telegram.telegram_service import TelegramService
 
             telegram_service = TelegramService()
         self.telegram_service = telegram_service

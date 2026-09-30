@@ -1,4 +1,4 @@
-"""Build the Telegram onboarding message."""
+"""Shared Telegram user-facing message builders."""
 
 from __future__ import annotations
 
@@ -23,3 +23,20 @@ def build_start_message(telegram_user_id: int | str | None = None) -> str:
         "• O administrador criará a planilha no Google Sheets e fará o cadastro no sistema."
         "Caso já tenha sido cadastradas, digite /ajuda para ver os comandos disponíveis."
     )
+
+
+def build_help_message() -> str:
+    """Return the available Telegram commands."""
+    return (
+        "📘 Comandos disponíveis:\n"
+        "• /start — inicia o cadastro e mostra a orientação de registro\n"
+        "• /sumario — usa a faixa de planilha do resumo do usuário\n"
+        "• /recorrente — usa a faixa de planilha recorrente do usuário\n"
+        "• /rendimentos — consulta e registra rendimentos do usuário\n"
+        "• /ajuda — mostra esta lista de comandos"
+    )
+
+
+def build_unregistered_user_message(telegram_user_id: int | str | None) -> str:
+    """Return onboarding guidance for an unresolved Telegram user."""
+    return build_start_message(telegram_user_id)

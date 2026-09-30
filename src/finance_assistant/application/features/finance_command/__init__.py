@@ -1,0 +1,1 @@
+"""Generic finance command feature."""

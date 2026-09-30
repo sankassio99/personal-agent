@@ -6,7 +6,7 @@ import logging
 
 from agno.tools import tool
 
-from finance_assistant.application.services.telegram_adapter_service import TelegramAdapterService
+from finance_assistant.adapters.telegram.telegram_adapter_service import TelegramAdapterService
 from finance_assistant.infrastructure.agents.add_expense_tool import _get_sheets_service
 from finance_assistant.infrastructure.agents.get_last_income_tool import INCOME_RANGE
 

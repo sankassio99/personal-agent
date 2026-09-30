@@ -1,6 +1,7 @@
 """Handle the Telegram start command."""
 
-from finance_assistant.application.handlers.build_start_message import build_start_message
+from finance_assistant.adapters.telegram.message_builders import build_start_message
+
 
 async def handle_start(update, context) -> None:
     """Send onboarding guidance for the current Telegram user."""

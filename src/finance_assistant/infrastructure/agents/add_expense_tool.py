@@ -10,7 +10,7 @@ from agno.tools import tool
 from google.oauth2 import service_account
 from googleapiclient.discovery import build
 
-from finance_assistant.application.services.telegram_adapter_service import TelegramAdapterService
+from finance_assistant.adapters.telegram.telegram_adapter_service import TelegramAdapterService
 
 logger = logging.getLogger(__name__)
 

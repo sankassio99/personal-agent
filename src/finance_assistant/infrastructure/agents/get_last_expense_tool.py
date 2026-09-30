@@ -5,7 +5,7 @@ from typing import Any
 
 from agno.tools import tool
 
-from finance_assistant.application.services.telegram_adapter_service import TelegramAdapterService
+from finance_assistant.adapters.telegram.telegram_adapter_service import TelegramAdapterService
 from finance_assistant.infrastructure.agents.add_expense_tool import (
     SHEET_NAME,
     _get_sheets_service,

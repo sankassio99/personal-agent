@@ -4,7 +4,8 @@ from unittest.mock import AsyncMock
 
 import pytest
 
-from finance_assistant.application.services import budget_notification_service, telegram_service
+from finance_assistant.adapters.telegram import telegram_service
+from finance_assistant.application.services import budget_notification_service
 from finance_assistant.infrastructure.agents import add_expense_tool
 
 
@@ -113,8 +114,8 @@ def test_failed_expense_write_does_not_look_up_or_notify_budget(monkeypatch):
 
 
 def test_telegram_handler_passes_user_context_to_expense_notification(monkeypatch):
-    from finance_assistant.application.handlers.message_handler import handle_message
-    from finance_assistant.application.services.telegram_adapter_service import TelegramAdapterService
+    from finance_assistant.adapters.telegram.telegram_adapter_service import TelegramAdapterService
+    from finance_assistant.application.features.message.handler import handle_message
 
     events, messages = configure_expense_workflow(monkeypatch, "95")
     telegram_adapter_service = TelegramAdapterService()
@@ -134,11 +135,11 @@ def test_telegram_handler_passes_user_context_to_expense_notification(monkeypatc
             )
 
     monkeypatch.setattr(
-        "finance_assistant.application.handlers.message_handler.TelegramAdapterService",
+        "finance_assistant.application.features.message.handler.TelegramAdapterService",
         lambda: telegram_adapter_service,
     )
     monkeypatch.setattr(
-        "finance_assistant.application.handlers.message_handler.FinanceAgent",
+        "finance_assistant.application.features.message.handler.FinanceAgent",
         DummyFinanceAgent,
     )
     reply_text = AsyncMock()

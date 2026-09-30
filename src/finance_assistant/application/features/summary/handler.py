@@ -1,18 +1,19 @@
-"""Handle the Telegram recurring command."""
+"""Handle the Telegram summary command."""
 
 from telegram.constants import ParseMode
 
-from finance_assistant.application.handlers.build_instructions import build_instructions
-from finance_assistant.application.handlers.build_unregistered_user_message import build_unregistered_user_message
-from finance_assistant.application.handlers.markdown_to_telegram_html import markdown_to_telegram_html
-from finance_assistant.application.services.telegram_adapter_service import TelegramAdapterService
+from finance_assistant.adapters.finance_agent.instructions import build_instructions
+from finance_assistant.adapters.telegram.message_builders import build_unregistered_user_message
+from finance_assistant.adapters.telegram.message_formatter import markdown_to_telegram_html
+from finance_assistant.adapters.telegram.telegram_adapter_service import TelegramAdapterService
 from finance_assistant.infrastructure.agents.add_expense_tool import telegram_user_context
 from finance_assistant.infrastructure.agents.response_agent import FinanceAgent
-RECURRING_SPREADSHEET_RANGE = "'Recorrentes'!A1:E50"
+
+SUMMARY_SPREADSHEET_RANGE = "'Sumário'!B18:H"
 
 
-async def handle_recurring(update, context) -> None:
-    """Route the recurring command through its spreadsheet range."""
+async def handle_summary(update, context) -> None:
+    """Route the summary command through its spreadsheet range."""
     message = update.message.text or ""
     user = update.effective_user or update.message.from_user
     telegram_user_id = getattr(user, "id", None)
@@ -23,8 +24,8 @@ async def handle_recurring(update, context) -> None:
         return
 
     finance_agent = FinanceAgent(
-        instructions=build_instructions(spreadsheet_id, RECURRING_SPREADSHEET_RANGE),
-        spreadsheet_range=RECURRING_SPREADSHEET_RANGE,
+        instructions=build_instructions(spreadsheet_id, SUMMARY_SPREADSHEET_RANGE),
+        spreadsheet_range=SUMMARY_SPREADSHEET_RANGE,
     )
     with telegram_user_context(telegram_user_id):
         reply = finance_agent.respond(message)
