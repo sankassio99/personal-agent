@@ -10,6 +10,30 @@ from finance_assistant.adapters.agents.add_expense_tool import telegram_user_con
 from finance_assistant.adapters.agents.response_agent import FinanceAgent
 
 SUMMARY_SPREADSHEET_RANGE = "'Sumário'!B18:H"
+SUMMARY_INSTRUCTIONS = """
+When responding to a financial summary request, use this Markdown structure:
+
+📊 **Sumário Financeiro**
+
+💰 **Rendimentos:**
+• Planeado: <planned income with two decimal places>€
+• Actual: <actual income with two decimal places>€
+
+💸 **Despesas Totais:**
+• Planeado: <planned expenses with two decimal places>€
+• Actual: <actual expenses with two decimal places>€
+
+🛒 **Principais Despesas (Actual):**
+• <category>: <amount with two decimal places>€
+
+Use the values from the spreadsheet, keep the section order and labels, list the main
+expense categories by actual value in descending order, and never invent missing values.
+"""
+
+
+def build_summary_instructions(spreadsheet_id: str) -> str:
+    """Build common FinanceAgent instructions plus the summary response format."""
+    return build_instructions(spreadsheet_id, SUMMARY_SPREADSHEET_RANGE) + SUMMARY_INSTRUCTIONS
 
 
 async def handle_summary(update, context) -> None:
@@ -24,7 +48,7 @@ async def handle_summary(update, context) -> None:
         return
 
     finance_agent = FinanceAgent(
-        instructions=build_instructions(spreadsheet_id, SUMMARY_SPREADSHEET_RANGE),
+        instructions=build_summary_instructions(spreadsheet_id),
         spreadsheet_range=SUMMARY_SPREADSHEET_RANGE,
     )
     with telegram_user_context(telegram_user_id):
