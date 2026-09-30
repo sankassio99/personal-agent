@@ -1,28 +1,26 @@
-"""Google Sheets tool for recording income entries."""
-
 from __future__ import annotations
 
 import logging
+from typing import Any
 
 from agno.tools import tool
 
 from finance_assistant.adapters.telegram.telegram_adapter_service import TelegramAdapterService
-from finance_assistant.infrastructure.agents.add_expense_tool import _get_sheets_service
-from finance_assistant.infrastructure.agents.get_last_income_tool import INCOME_RANGE
+from finance_assistant.adapters.agents.add_expense_tool import (
+    SHEET_NAME,
+    _get_sheets_service,
+)
 
 logger = logging.getLogger(__name__)
 
 
 @tool
-def add_income(
-    date: str,
-    amount: float,
-    description: str,
-    category: str,
+def get_last_expense(
     spreadsheet_id: str | None = None,
     telegram_user_id: int | str | None = None,
+    sheet_name: str = SHEET_NAME,
 ) -> str:
-    """Append one income record to columns B through E of Rendimentos."""
+    """Return the last non-empty expense row from the configured worksheet."""
     if spreadsheet_id is None:
         spreadsheet_id = TelegramAdapterService().resolve_spreadsheet_id(telegram_user_id)
 
@@ -32,27 +30,29 @@ def add_income(
             "Provide spreadsheet_id explicitly or route through TelegramAdapterService."
         )
 
-    values = [[date, amount, description, category]]
     try:
         result = (
             _get_sheets_service()
             .spreadsheets()
             .values()
-            .append(
+            .get(
                 spreadsheetId=spreadsheet_id,
-                range=INCOME_RANGE,
-                valueInputOption="USER_ENTERED",
-                insertDataOption="INSERT_ROWS",
-                body={"values": values},
+                range=f"{sheet_name}!B:F",
             )
             .execute()
         )
     except Exception as exc:
         logger.exception(
-            "Unable to append income for spreadsheet_id=%s.",
+            "Unable to read the last expense from Google Sheets for spreadsheet_id=%s, sheet_name=%s",
             spreadsheet_id,
+            sheet_name,
         )
-        raise RuntimeError("Unable to append the income record to Google Sheets.") from exc
+        raise RuntimeError(f"Unable to read the last expense from Google Sheets: {exc}") from exc
 
-    updated_range = result.get("updates", {}).get("updatedRange", "unknown")
-    return f"Income added successfully. Range: {updated_range}"
+    rows = result.get("values", [])
+    last_row: list[Any] | None = next((row for row in reversed(rows) if any(str(value).strip() for value in row)), None)
+
+    if last_row is None:
+        return "No expenses found."
+
+    return "Last expense: " + " | ".join(str(value) for value in last_row)

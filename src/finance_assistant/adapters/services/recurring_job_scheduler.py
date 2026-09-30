@@ -8,7 +8,7 @@ import time as time_module
 from datetime import datetime
 from typing import Callable
 
-from finance_assistant.application.services.recurrence_rule import RecurrenceRule
+from finance_assistant.adapters.services.recurrence_rule import RecurrenceRule
 
 logger = logging.getLogger(__name__)
 

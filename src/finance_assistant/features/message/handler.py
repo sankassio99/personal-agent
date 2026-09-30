@@ -6,8 +6,8 @@ from finance_assistant.adapters.finance_agent.instructions import build_instruct
 from finance_assistant.adapters.telegram.message_builders import build_unregistered_user_message
 from finance_assistant.adapters.telegram.message_formatter import markdown_to_telegram_html
 from finance_assistant.adapters.telegram.telegram_adapter_service import TelegramAdapterService
-from finance_assistant.infrastructure.agents.add_expense_tool import telegram_user_context
-from finance_assistant.infrastructure.agents.response_agent import FinanceAgent
+from finance_assistant.adapters.agents.add_expense_tool import telegram_user_context
+from finance_assistant.adapters.agents.response_agent import FinanceAgent
 
 EXPENSES_SPREADSHEET_RANGE = "'Despesas'!B1:E"
 

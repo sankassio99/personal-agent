@@ -1,7 +1,7 @@
 from datetime import datetime, timedelta
 
-from finance_assistant.application.services.recurrence_rule import RecurrenceRule
-from finance_assistant.application.services.recurring_job_scheduler import RecurringJobScheduler
+from finance_assistant.adapters.services.recurrence_rule import RecurrenceRule
+from finance_assistant.adapters.services.recurring_job_scheduler import RecurringJobScheduler
 
 
 class FixedRecurrence(RecurrenceRule):

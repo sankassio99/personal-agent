@@ -2,8 +2,8 @@
 
 import logging
 
-from finance_assistant.infrastructure.agents.base_agent import BaseAgent
-from finance_assistant.infrastructure.agents.prompts import FINANCE_ASSISTANT_PROMPT
+from finance_assistant.adapters.agents.base_agent import BaseAgent
+from finance_assistant.adapters.agents.prompts import FINANCE_ASSISTANT_PROMPT
 
 logger = logging.getLogger(__name__)
 

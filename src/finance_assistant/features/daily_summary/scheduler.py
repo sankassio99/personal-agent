@@ -5,8 +5,8 @@ from __future__ import annotations
 import logging
 from datetime import datetime, time
 
-from finance_assistant.application.services.recurrence_rule import DailyRecurrence
-from finance_assistant.application.services.recurring_job_scheduler import RecurringJobScheduler
+from finance_assistant.adapters.services.recurrence_rule import DailyRecurrence
+from finance_assistant.adapters.services.recurring_job_scheduler import RecurringJobScheduler
 
 logger = logging.getLogger(__name__)
 

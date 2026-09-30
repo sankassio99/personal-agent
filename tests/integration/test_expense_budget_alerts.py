@@ -6,7 +6,7 @@ import pytest
 
 from finance_assistant.adapters.telegram import telegram_service
 from finance_assistant.features.budget_notification import service as budget_notification_service
-from finance_assistant.infrastructure.agents import add_expense_tool
+from finance_assistant.adapters.agents import add_expense_tool
 
 
 def configure_expense_workflow(monkeypatch, actual, failure=None):

@@ -4,7 +4,7 @@ from __future__ import annotations
 
 from datetime import datetime
 
-from finance_assistant.infrastructure.agents.prompts import FINANCE_ASSISTANT_PROMPT
+from finance_assistant.adapters.agents.prompts import FINANCE_ASSISTANT_PROMPT
 
 
 def build_instructions(

@@ -6,12 +6,12 @@ import os
 from finance_assistant.infrastructure.config.settings import settings
 from agno.tools.google.sheets import GoogleSheetsTools
 
-from finance_assistant.infrastructure.agents.add_expense_tool import add_expense
-from finance_assistant.infrastructure.agents.add_income_tool import add_income
-from finance_assistant.infrastructure.agents.get_available_categories_tool import get_available_categories
-from finance_assistant.infrastructure.agents.get_last_expense_tool import get_last_expense
-from finance_assistant.infrastructure.agents.get_last_income_tool import get_last_income
-from finance_assistant.infrastructure.agents.validate_expense_row_tool import validate_expense_row
+from finance_assistant.adapters.agents.add_expense_tool import add_expense
+from finance_assistant.adapters.agents.add_income_tool import add_income
+from finance_assistant.adapters.agents.get_available_categories_tool import get_available_categories
+from finance_assistant.adapters.agents.get_last_expense_tool import get_last_expense
+from finance_assistant.adapters.agents.get_last_income_tool import get_last_income
+from finance_assistant.adapters.agents.validate_expense_row_tool import validate_expense_row
 
 logger = logging.getLogger(__name__)
 

@@ -6,7 +6,7 @@ import logging
 
 from finance_assistant.adapters.telegram.telegram_adapter_service import TelegramAdapterService
 from finance_assistant.features.daily_summary.service import DailySummaryService
-from finance_assistant.infrastructure.repositories.google_sheets_repository import GoogleSheetsRepository
+from finance_assistant.adapters.repositories.google_sheets_repository import GoogleSheetsRepository
 
 logger = logging.getLogger(__name__)
 

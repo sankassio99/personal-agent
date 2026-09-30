@@ -9,7 +9,7 @@ from finance_assistant.features.daily_summary.formatter import DailySummaryMessa
 from finance_assistant.features.daily_summary.job import DailySummaryJob
 from finance_assistant.features.daily_summary.scheduler import DailySummaryScheduler
 from finance_assistant.features.daily_summary.service import DailySummaryService
-from finance_assistant.infrastructure.repositories.google_sheets_repository import GoogleSheetsRepository
+from finance_assistant.adapters.repositories.google_sheets_repository import GoogleSheetsRepository
 
 
 def test_daily_summary_service_filters_current_day_and_shapes_payload():

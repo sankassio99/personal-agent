@@ -17,10 +17,10 @@ from finance_assistant.features.audio.handler import handle_audio_message
 from finance_assistant.features.income.handler import INCOME_SPREADSHEET_RANGE, handle_income
 from finance_assistant.features.message.handler import EXPENSES_SPREADSHEET_RANGE, handle_message
 from finance_assistant.features.recurring.handler import RECURRING_SPREADSHEET_RANGE, handle_recurring
-from finance_assistant.infrastructure.agents.speech_to_text_agent import SpeechToTextAgent
-from finance_assistant.infrastructure.agents.add_expense_tool import add_expense
-from finance_assistant.infrastructure.agents.base_agent import BaseAgent
-from finance_assistant.infrastructure.agents.response_agent import FinanceAgent
+from finance_assistant.adapters.agents.speech_to_text_agent import SpeechToTextAgent
+from finance_assistant.adapters.agents.add_expense_tool import add_expense
+from finance_assistant.adapters.agents.base_agent import BaseAgent
+from finance_assistant.adapters.agents.response_agent import FinanceAgent
 from finance_assistant.infrastructure.config import settings as settings_module
 from finance_assistant.infrastructure.config.settings import settings
 
@@ -103,7 +103,7 @@ def test_build_instructions_include_spreadsheet_id_and_range():
 
 
 def test_base_agent_create_agent_accepts_spreadsheet_range_override(monkeypatch):
-    import finance_assistant.infrastructure.agents.base_agent as base_agent_module
+    import finance_assistant.adapters.agents.base_agent as base_agent_module
 
     captured = {}
 
@@ -137,7 +137,7 @@ def test_base_agent_create_agent_accepts_spreadsheet_range_override(monkeypatch)
 
 
 def test_get_last_expense_reads_the_last_non_empty_sheet_row(monkeypatch):
-    from finance_assistant.infrastructure.agents.get_last_expense_tool import get_last_expense
+    from finance_assistant.adapters.agents.get_last_expense_tool import get_last_expense
 
     captured = {}
 
@@ -171,7 +171,7 @@ def test_get_last_expense_reads_the_last_non_empty_sheet_row(monkeypatch):
 
 
 def test_validate_expense_row_confirms_the_last_expense_values(monkeypatch):
-    from finance_assistant.infrastructure.agents.validate_expense_row_tool import validate_expense_row
+    from finance_assistant.adapters.agents.validate_expense_row_tool import validate_expense_row
 
     class DummyGet:
         def execute(self):
@@ -340,7 +340,7 @@ def test_handle_audio_message_transcribes_audio_then_forwards_transcript_to_fina
 
 
 def test_speech_to_text_agent_transcribes_supplied_audio_bytes(monkeypatch):
-    import finance_assistant.infrastructure.agents.speech_to_text_agent as speech_module
+    import finance_assistant.adapters.agents.speech_to_text_agent as speech_module
 
     captured = {}
 
@@ -450,7 +450,7 @@ def test_add_expense_tool_uses_google_sheets_append_support(monkeypatch):
 
 
 def test_get_last_income_reads_rendimentos_columns_for_mapped_user(monkeypatch):
-    from finance_assistant.infrastructure.agents.get_last_income_tool import get_last_income
+    from finance_assistant.adapters.agents.get_last_income_tool import get_last_income
 
     captured = {}
 
@@ -482,14 +482,14 @@ def test_get_last_income_reads_rendimentos_columns_for_mapped_user(monkeypatch):
 
 
 def test_get_last_income_rejects_unmapped_user():
-    from finance_assistant.infrastructure.agents.get_last_income_tool import get_last_income
+    from finance_assistant.adapters.agents.get_last_income_tool import get_last_income
 
     with pytest.raises(ValueError, match="No Google spreadsheet id"):
         get_last_income.entrypoint(telegram_user_id=999999999)
 
 
 def test_add_income_appends_to_rendimentos_columns(monkeypatch):
-    from finance_assistant.infrastructure.agents.add_income_tool import add_income
+    from finance_assistant.adapters.agents.add_income_tool import add_income
 
     captured = {}
 
@@ -532,7 +532,7 @@ def test_add_income_appends_to_rendimentos_columns(monkeypatch):
 
 
 def test_add_income_propagates_google_sheets_failure(monkeypatch):
-    from finance_assistant.infrastructure.agents.add_income_tool import add_income
+    from finance_assistant.adapters.agents.add_income_tool import add_income
 
     class Values:
         def append(self, **kwargs):
@@ -581,7 +581,7 @@ def test_get_available_categories_reads_the_configured_summary_range(
     values,
     expected_message,
 ):
-    from finance_assistant.infrastructure.agents.get_available_categories_tool import get_available_categories
+    from finance_assistant.adapters.agents.get_available_categories_tool import get_available_categories
 
     captured = {}
 
@@ -613,7 +613,7 @@ def test_get_available_categories_reads_the_configured_summary_range(
 
 
 def test_get_available_categories_rejects_unmapped_user_without_sheets_request(monkeypatch):
-    from finance_assistant.infrastructure.agents.get_available_categories_tool import get_available_categories
+    from finance_assistant.adapters.agents.get_available_categories_tool import get_available_categories
 
     monkeypatch.setattr(
         "finance_assistant.infrastructure.agents.get_available_categories_tool.TelegramAdapterService",
@@ -629,7 +629,7 @@ def test_get_available_categories_rejects_unmapped_user_without_sheets_request(m
 
 
 def test_get_available_categories_propagates_google_sheets_failures(monkeypatch):
-    from finance_assistant.infrastructure.agents.get_available_categories_tool import get_available_categories
+    from finance_assistant.adapters.agents.get_available_categories_tool import get_available_categories
 
     class SheetsValues:
         def get(self, **kwargs):
@@ -649,7 +649,7 @@ def test_get_available_categories_propagates_google_sheets_failures(monkeypatch)
 
 
 def test_expense_prompt_requires_category_retrieval_only_when_omitted():
-    from finance_assistant.infrastructure.agents.prompts import FINANCE_ASSISTANT_PROMPT
+    from finance_assistant.adapters.agents.prompts import FINANCE_ASSISTANT_PROMPT
 
     assert 'get_available_categories with entry_type "expense"' in FINANCE_ASSISTANT_PROMPT
     assert "Preserve a category explicitly provided by the user." in FINANCE_ASSISTANT_PROMPT
@@ -657,9 +657,9 @@ def test_expense_prompt_requires_category_retrieval_only_when_omitted():
 
 
 def test_income_tools_reuse_the_expense_google_sheets_service_builder():
-    from finance_assistant.infrastructure.agents.add_expense_tool import _get_sheets_service as expense_service
-    from finance_assistant.infrastructure.agents.add_income_tool import _get_sheets_service as income_append_service
-    from finance_assistant.infrastructure.agents.get_last_income_tool import _get_sheets_service as income_read_service
+    from finance_assistant.adapters.agents.add_expense_tool import _get_sheets_service as expense_service
+    from finance_assistant.adapters.agents.add_income_tool import _get_sheets_service as income_append_service
+    from finance_assistant.adapters.agents.get_last_income_tool import _get_sheets_service as income_read_service
 
     assert income_append_service is expense_service
     assert income_read_service is expense_service

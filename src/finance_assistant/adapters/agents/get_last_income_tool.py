@@ -1,3 +1,5 @@
+"""Google Sheets tool for reading the latest income entry."""
+
 from __future__ import annotations
 
 import logging
@@ -6,21 +8,20 @@ from typing import Any
 from agno.tools import tool
 
 from finance_assistant.adapters.telegram.telegram_adapter_service import TelegramAdapterService
-from finance_assistant.infrastructure.agents.add_expense_tool import (
-    SHEET_NAME,
-    _get_sheets_service,
-)
+from finance_assistant.adapters.agents.add_expense_tool import _get_sheets_service
 
 logger = logging.getLogger(__name__)
 
+INCOME_SHEET_NAME = "Rendimentos"
+INCOME_RANGE = f"{INCOME_SHEET_NAME}!B:E"
+
 
 @tool
-def get_last_expense(
+def get_last_income(
     spreadsheet_id: str | None = None,
     telegram_user_id: int | str | None = None,
-    sheet_name: str = SHEET_NAME,
 ) -> str:
-    """Return the last non-empty expense row from the configured worksheet."""
+    """Return the latest non-empty income record from the Rendimentos tab."""
     if spreadsheet_id is None:
         spreadsheet_id = TelegramAdapterService().resolve_spreadsheet_id(telegram_user_id)
 
@@ -35,24 +36,22 @@ def get_last_expense(
             _get_sheets_service()
             .spreadsheets()
             .values()
-            .get(
-                spreadsheetId=spreadsheet_id,
-                range=f"{sheet_name}!B:F",
-            )
+            .get(spreadsheetId=spreadsheet_id, range=INCOME_RANGE)
             .execute()
         )
     except Exception as exc:
         logger.exception(
-            "Unable to read the last expense from Google Sheets for spreadsheet_id=%s, sheet_name=%s",
+            "Unable to read income records for spreadsheet_id=%s.",
             spreadsheet_id,
-            sheet_name,
         )
-        raise RuntimeError(f"Unable to read the last expense from Google Sheets: {exc}") from exc
+        raise RuntimeError("Unable to read income records from Google Sheets.") from exc
 
     rows = result.get("values", [])
-    last_row: list[Any] | None = next((row for row in reversed(rows) if any(str(value).strip() for value in row)), None)
-
+    last_row: list[Any] | None = next(
+        (row for row in reversed(rows) if any(str(value).strip() for value in row)),
+        None,
+    )
     if last_row is None:
-        return "No expenses found."
+        return "No income records found."
 
-    return "Last expense: " + " | ".join(str(value) for value in last_row)
+    return "Last income: " + " | ".join(str(value) for value in last_row)
