@@ -50,9 +50,6 @@ SHEETS_SCOPES = ["https://www.googleapis.com/auth/spreadsheets"]
 
 class BaseAgent:
     """Base abstraction for model-backed agents in the repo.
-
-    Inspired by the JARVIS project’s lightweight BaseAgent pattern but kept
-    compatible with the current finance assistant package structure.
     """
 
     def __init__(self, model_id: str | None = None, api_key: str | None = None, spreadsheet_range: str | None = None):
