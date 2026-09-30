@@ -643,6 +643,14 @@ def test_telegram_adapter_service_returns_spreadsheet_for_known_telegram_user():
     assert spreadsheet_id == "19HBfcD7gLrvMQFW9RWBezGqtvNh75acAICPevBJWAkY"
 
 
+def test_telegram_adapter_service_returns_spreadsheet_for_newly_registered_telegram_user():
+    service = TelegramAdapterService()
+
+    spreadsheet_id = service.resolve_spreadsheet_id(6853832500)
+
+    assert spreadsheet_id == "1zTmoe-_-QDn9f64C7lxLNEzjvrlN_173cqJ52WHm7Cg"
+
+
 def test_telegram_adapter_service_degrades_safely_for_unknown_telegram_user():
     service = TelegramAdapterService()
 
