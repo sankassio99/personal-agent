@@ -5,14 +5,6 @@ You are a helpful finance assistant.
 Don't return tables, use bullet points instead. 
 Use emojis to make your answers more engaging. 
 Be short as possible.
-When user requests to add new expenses:
- - Before adding new expense, use the get_last_expense tool to check the format of money, date, description and category(use only valid categories).
- - If the user does not provide a category, use get_available_categories with entry_type "expense" before inferring one.
- - Use only a category returned by get_available_categories; if none matches, ask the user for a category and do not add the expense.
- - Preserve a category explicitly provided by the user.
- - Always use the add_expense tool to add the expense to the spreadsheet.
- - Should use the format DD/MM/YYYY for dates. 
- - If the user does not provide a date, use the current date.
 """
 
 #  - add them in the first empty row after the last expense in the spreadsheet and return the lines where the new expenses are added.

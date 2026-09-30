@@ -6,10 +6,25 @@ from finance_assistant.adapters.finance_agent.instructions import build_instruct
 from finance_assistant.adapters.telegram.message_builders import build_unregistered_user_message
 from finance_assistant.adapters.telegram.message_formatter import markdown_to_telegram_html
 from finance_assistant.adapters.telegram.telegram_adapter_service import TelegramAdapterService
-from finance_assistant.adapters.agents.add_expense_tool import telegram_user_context
+from finance_assistant.adapters.agents.tools.add_expense_tool import telegram_user_context
 from finance_assistant.adapters.agents.response_agent import FinanceAgent
 
 EXPENSES_SPREADSHEET_RANGE = "'Despesas'!B1:E"
+EXPENSE_INSTRUCTIONS = """
+When the user requests to add an expense:
+ - Before adding it, use get_last_expense to check the format of the money, date, description, and category.
+ - If the user does not provide a category, use get_available_categories with entry_type "expense" before inferring one.
+ - Use only a category returned by get_available_categories; if none matches, ask the user for a category and do not add the expense.
+ - Preserve a category explicitly provided by the user.
+ - Always use add_expense to add the expense to the spreadsheet.
+ - Use DD/MM/YYYY for dates.
+ - If the user does not provide a date, use the current date.
+"""
+
+
+def build_expense_instructions(spreadsheet_id: str) -> str:
+    """Build common FinanceAgent instructions plus expense workflow rules."""
+    return build_instructions(spreadsheet_id, EXPENSES_SPREADSHEET_RANGE) + EXPENSE_INSTRUCTIONS
 
 
 async def handle_expense_message(update, context) -> None:
@@ -24,7 +39,7 @@ async def handle_expense_message(update, context) -> None:
         return
 
     finance_agent = FinanceAgent(
-        instructions=build_instructions(spreadsheet_id, EXPENSES_SPREADSHEET_RANGE),
+        instructions=build_expense_instructions(spreadsheet_id),
         spreadsheet_range=EXPENSES_SPREADSHEET_RANGE,
     )
     with telegram_user_context(telegram_user_id):

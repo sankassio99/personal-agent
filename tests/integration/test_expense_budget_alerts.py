@@ -8,7 +8,7 @@ from finance_assistant.adapters.services.event_bus import expense_recorded_event
 from finance_assistant.adapters.telegram import telegram_service
 from finance_assistant.features.budget_notification import service as budget_notification_service
 from finance_assistant.features.budget_notification.observer import BudgetNotificationObserver
-from finance_assistant.adapters.agents import add_expense_tool
+from finance_assistant.adapters.agents.tools import add_expense_tool
 
 
 def configure_expense_workflow(monkeypatch, actual, failure=None):

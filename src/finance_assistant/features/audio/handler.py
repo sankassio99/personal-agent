@@ -12,7 +12,7 @@ from finance_assistant.adapters.telegram.message_builders import build_unregiste
 from finance_assistant.adapters.telegram.message_formatter import markdown_to_telegram_html
 from finance_assistant.adapters.telegram.telegram_adapter_service import TelegramAdapterService
 from finance_assistant.features.message.handler import EXPENSES_SPREADSHEET_RANGE
-from finance_assistant.adapters.agents.add_expense_tool import telegram_user_context
+from finance_assistant.adapters.agents.tools.add_expense_tool import telegram_user_context
 from finance_assistant.adapters.agents.response_agent import FinanceAgent
 from finance_assistant.adapters.agents.speech_to_text_agent import SpeechToTextAgent
 

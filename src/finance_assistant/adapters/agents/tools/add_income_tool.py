@@ -7,8 +7,8 @@ import logging
 from agno.tools import tool
 
 from finance_assistant.adapters.telegram.telegram_adapter_service import TelegramAdapterService
-from finance_assistant.adapters.agents.add_expense_tool import _get_sheets_service
-from finance_assistant.adapters.agents.get_last_income_tool import INCOME_RANGE
+from finance_assistant.adapters.agents.tools.add_expense_tool import _get_sheets_service
+from finance_assistant.adapters.agents.tools.get_last_income_tool import INCOME_RANGE
 
 logger = logging.getLogger(__name__)
 

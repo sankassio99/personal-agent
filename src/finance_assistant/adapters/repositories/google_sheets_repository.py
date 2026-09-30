@@ -8,7 +8,7 @@ from typing import Any
 from google.oauth2 import service_account
 from googleapiclient.discovery import build
 
-from finance_assistant.adapters.agents.add_expense_tool import _get_sheets_service
+from finance_assistant.adapters.agents.tools.add_expense_tool import _get_sheets_service
 
 logger = logging.getLogger(__name__)
 
