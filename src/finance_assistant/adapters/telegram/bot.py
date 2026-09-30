@@ -9,7 +9,7 @@ from finance_assistant.features.message.handler import handle_message
 from finance_assistant.features.recurring.handler import handle_recurring
 from finance_assistant.features.start.handler import handle_start
 from finance_assistant.features.summary.handler import handle_summary
-from finance_assistant.infrastructure.config.settings import settings
+from finance_assistant.settings import settings
 
 def run_bot() -> None:
     """Start the Telegram finance assistant bot with command and message handlers."""

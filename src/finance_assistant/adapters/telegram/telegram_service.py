@@ -7,7 +7,7 @@ import inspect
 import logging
 from concurrent.futures import ThreadPoolExecutor
 
-from finance_assistant.infrastructure.config.settings import settings
+from finance_assistant.settings import settings
 from telegram import Bot
 
 logger = logging.getLogger(__name__)

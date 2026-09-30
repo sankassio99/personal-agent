@@ -21,8 +21,8 @@ from finance_assistant.adapters.agents.speech_to_text_agent import SpeechToTextA
 from finance_assistant.adapters.agents.add_expense_tool import add_expense
 from finance_assistant.adapters.agents.base_agent import BaseAgent
 from finance_assistant.adapters.agents.response_agent import FinanceAgent
-from finance_assistant.infrastructure.config import settings as settings_module
-from finance_assistant.infrastructure.config.settings import settings
+from finance_assistant import settings as settings_module
+from finance_assistant.settings import settings
 
 
 def test_google_environment_settings_are_exposed_in_settings_surface(monkeypatch):

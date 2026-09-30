@@ -3,7 +3,7 @@
 import logging
 import os
 from google.genai import types
-from finance_assistant.infrastructure.config.settings import settings
+from finance_assistant.settings import settings
 
 logger = logging.getLogger(__name__)
 

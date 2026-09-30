@@ -3,7 +3,7 @@
 import logging
 import os
 
-from finance_assistant.infrastructure.config.settings import settings
+from finance_assistant.settings import settings
 from agno.tools.google.sheets import GoogleSheetsTools
 
 from finance_assistant.adapters.agents.add_expense_tool import add_expense
