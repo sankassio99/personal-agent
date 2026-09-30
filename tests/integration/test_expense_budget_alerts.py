@@ -113,14 +113,15 @@ def test_failed_expense_write_does_not_look_up_or_notify_budget(monkeypatch):
 
 
 def test_telegram_handler_passes_user_context_to_expense_notification(monkeypatch):
-    from finance_assistant.application.handlers import telegram_handlers
+    from finance_assistant.application.handlers.build_instructions import build_instructions
+    from finance_assistant.application.handlers.build_unregistered_user_message import build_unregistered_user_message
+    from finance_assistant.application.handlers.finance_reply_dispatcher import FinanceReplyDispatcher
+    from finance_assistant.application.handlers.markdown_to_telegram_html import markdown_to_telegram_html
+    from finance_assistant.application.services.telegram_adapter_service import TelegramAdapterService
 
     events, messages = configure_expense_workflow(monkeypatch, "95")
-    monkeypatch.setattr(
-        telegram_handlers.telegram_adapter_service,
-        "resolve_spreadsheet_id",
-        lambda telegram_user_id: "client-spreadsheet",
-    )
+    telegram_adapter_service = TelegramAdapterService()
+    monkeypatch.setattr(telegram_adapter_service, "resolve_spreadsheet_id", lambda telegram_user_id: "client-spreadsheet")
 
     class DummyFinanceAgent:
         def __init__(self, **kwargs):
@@ -135,7 +136,13 @@ def test_telegram_handler_passes_user_context_to_expense_notification(monkeypatc
                 spreadsheet_id="client-spreadsheet",
             )
 
-    monkeypatch.setattr(telegram_handlers, "FinanceAgent", DummyFinanceAgent)
+    dispatcher = FinanceReplyDispatcher(
+        telegram_adapter_service,
+        DummyFinanceAgent,
+        build_instructions,
+        build_unregistered_user_message,
+        markdown_to_telegram_html,
+    )
     reply_text = AsyncMock()
     user = SimpleNamespace(id="client-1")
     update = SimpleNamespace(
@@ -143,7 +150,7 @@ def test_telegram_handler_passes_user_context_to_expense_notification(monkeypatc
         message=SimpleNamespace(from_user=user, reply_text=reply_text),
     )
 
-    asyncio.run(telegram_handlers._dispatch_finance_reply(update, "add groceries", "'Sumário'!B18:H"))
+    asyncio.run(dispatcher.dispatch(update, "add groceries", "'Sumário'!B18:H"))
 
     assert events == ["write", "lookup", "notification"]
     assert messages[0][0] == "client-1"

@@ -5,11 +5,17 @@ from unittest.mock import AsyncMock
 
 import pytest
 
-from finance_assistant.application.handlers.telegram_handlers import (
-    build_help_message,
-    build_start_message,
-    markdown_to_telegram_html,
-)
+from finance_assistant.application.handlers.audio_handler import handle_audio_message
+from finance_assistant.application.handlers.build_help_message import build_help_message
+from finance_assistant.application.handlers.build_instructions import build_instructions
+from finance_assistant.application.handlers.build_start_message import build_start_message
+from finance_assistant.application.handlers.build_unregistered_user_message import build_unregistered_user_message
+from finance_assistant.application.handlers.finance_reply_dispatcher import FinanceReplyDispatcher
+from finance_assistant.application.handlers.markdown_to_telegram_html import markdown_to_telegram_html
+from finance_assistant.application.handlers.message_handler import EXPENSES_SPREADSHEET_RANGE, handle_message
+from finance_assistant.application.handlers.recurring_handler import RECURRING_SPREADSHEET_RANGE, handle_recurring
+from finance_assistant.application.handlers.income_handler import handle_income
+from finance_assistant.application.handlers.income_handler import INCOME_SPREADSHEET_RANGE
 from finance_assistant.infrastructure.agents.speech_to_text_agent import SpeechToTextAgent
 from finance_assistant.application.services.telegram_adapter_service import TelegramAdapterService
 from finance_assistant.infrastructure.agents.add_expense_tool import add_expense
@@ -90,9 +96,7 @@ def test_markdown_to_telegram_html_convert_bullet_points():
 
 
 def test_build_instructions_include_spreadsheet_id_and_range():
-    from finance_assistant.application.handlers import telegram_handlers as handlers
-
-    prompt = handlers.build_instructions("sheet-id", "'Recorrentes'!A1:E50")
+    prompt = build_instructions("sheet-id", "'Recorrentes'!A1:E50")
 
     assert "sheet-id" in prompt
     assert "'Recorrentes'!A1:E50" in prompt
@@ -204,8 +208,6 @@ def test_validate_expense_row_confirms_the_last_expense_values(monkeypatch):
 
 
 def test_handle_recurring_forwards_recurring_range_override(monkeypatch):
-    from finance_assistant.application.handlers import telegram_handlers as handlers
-
     captured = {}
 
     class DummyFinanceAgent:
@@ -222,18 +224,27 @@ def test_handle_recurring_forwards_recurring_range_override(monkeypatch):
         message=SimpleNamespace(text="/recurring", reply_text=reply_text),
     )
 
-    monkeypatch.setattr(handlers.telegram_adapter_service, "resolve_spreadsheet_id", lambda telegram_user_id: "sheet-id")
-    monkeypatch.setattr(handlers, "FinanceAgent", DummyFinanceAgent)
+    telegram_adapter_service = TelegramAdapterService()
+    monkeypatch.setattr(telegram_adapter_service, "resolve_spreadsheet_id", lambda telegram_user_id: "sheet-id")
+    dispatcher = FinanceReplyDispatcher(
+        telegram_adapter_service,
+        DummyFinanceAgent,
+        build_instructions,
+        build_unregistered_user_message,
+        markdown_to_telegram_html,
+    )
+    monkeypatch.setattr(
+        "finance_assistant.application.handlers.recurring_handler._build_dispatcher",
+        lambda: dispatcher,
+    )
 
-    asyncio.run(handlers.handle_recurring(update, None))
+    asyncio.run(handle_recurring(update, None))
 
-    assert captured["spreadsheet_range"] == handlers.RECURRING_SPREADSHEET_RANGE
-    assert captured["instructions"] == handlers.build_instructions("sheet-id", handlers.RECURRING_SPREADSHEET_RANGE)
+    assert captured["spreadsheet_range"] == RECURRING_SPREADSHEET_RANGE
+    assert captured["instructions"] == build_instructions("sheet-id", RECURRING_SPREADSHEET_RANGE)
 
 
 def test_handle_income_forwards_income_range_override(monkeypatch):
-    from finance_assistant.application.handlers import telegram_handlers as handlers
-
     captured = {}
 
     class DummyFinanceAgent:
@@ -250,12 +261,23 @@ def test_handle_income_forwards_income_range_override(monkeypatch):
         message=SimpleNamespace(text="/rendimentos", reply_text=reply_text),
     )
 
-    monkeypatch.setattr(handlers.telegram_adapter_service, "resolve_spreadsheet_id", lambda telegram_user_id: "sheet-id")
-    monkeypatch.setattr(handlers, "FinanceAgent", DummyFinanceAgent)
+    telegram_adapter_service = TelegramAdapterService()
+    monkeypatch.setattr(telegram_adapter_service, "resolve_spreadsheet_id", lambda telegram_user_id: "sheet-id")
+    dispatcher = FinanceReplyDispatcher(
+        telegram_adapter_service,
+        DummyFinanceAgent,
+        build_instructions,
+        build_unregistered_user_message,
+        markdown_to_telegram_html,
+    )
+    monkeypatch.setattr(
+        "finance_assistant.application.handlers.income_handler._build_dispatcher",
+        lambda: dispatcher,
+    )
 
-    asyncio.run(handlers.handle_income(update, None))
+    asyncio.run(handle_income(update, None))
 
-    assert captured["spreadsheet_range"] == handlers.INCOME_SPREADSHEET_RANGE
+    assert captured["spreadsheet_range"] == INCOME_SPREADSHEET_RANGE
     assert "get_last_income" in captured["instructions"]
     assert "get_available_categories" in captured["instructions"]
 
@@ -266,8 +288,6 @@ def test_help_message_includes_rendimentos_command():
 
 
 def test_handle_audio_message_transcribes_audio_then_forwards_transcript_to_finance_agent(monkeypatch):
-    from finance_assistant.application.handlers import telegram_handlers as handlers
-
     captured = {}
 
     class DummySpeechToTextAgent:
@@ -285,10 +305,10 @@ def test_handle_audio_message_transcribes_audio_then_forwards_transcript_to_fina
 
     class DummyFile:
         def __init__(self):
-            self.download_as_bytearray = AsyncMock(return_value=b"audio-bytes")
+            self.download_to_memory = AsyncMock(side_effect=lambda buffer: buffer.write(b"audio-bytes"))
 
     reply_text = AsyncMock()
-    context = SimpleNamespace(bot=SimpleNamespace(get_file=lambda file_id: DummyFile()))
+    context = SimpleNamespace(bot=SimpleNamespace(get_file=AsyncMock(return_value=DummyFile())))
     update = SimpleNamespace(
         effective_user=SimpleNamespace(id=123456789),
         message=SimpleNamespace(
@@ -303,15 +323,28 @@ def test_handle_audio_message_transcribes_audio_then_forwards_transcript_to_fina
         ),
     )
 
-    monkeypatch.setattr(handlers.telegram_adapter_service, "resolve_spreadsheet_id", lambda telegram_user_id: "sheet-id")
-    monkeypatch.setattr(handlers, "SpeechToTextAgent", DummySpeechToTextAgent)
-    monkeypatch.setattr(handlers, "FinanceAgent", DummyFinanceAgent)
-    monkeypatch.setattr(handlers, "markdown_to_telegram_html", lambda reply: reply)
+    telegram_adapter_service = TelegramAdapterService()
+    monkeypatch.setattr(telegram_adapter_service, "resolve_spreadsheet_id", lambda telegram_user_id: "sheet-id")
+    dispatcher = FinanceReplyDispatcher(
+        telegram_adapter_service,
+        DummyFinanceAgent,
+        build_instructions,
+        build_unregistered_user_message,
+        lambda reply: reply,
+    )
+    monkeypatch.setattr(
+        "finance_assistant.application.handlers.audio_handler._build_dispatcher",
+        lambda: dispatcher,
+    )
+    monkeypatch.setattr(
+        "finance_assistant.application.handlers.audio_handler.SpeechToTextAgent",
+        DummySpeechToTextAgent,
+    )
 
-    asyncio.run(handlers.handle_audio_message(update, context))
+    asyncio.run(handle_audio_message(update, context))
 
     assert captured["message"] == "gasto de mercado"
-    assert captured["spreadsheet_range"] == handlers.EXPENSES_RANGE_NAME
+    assert captured["spreadsheet_range"] == EXPENSES_SPREADSHEET_RANGE
     assert "sheet-id" in captured["instructions"]
 
 
@@ -353,8 +386,6 @@ def test_speech_to_text_agent_transcribes_supplied_audio_bytes(monkeypatch):
 
 
 def test_unknown_telegram_user_gets_registration_message_and_skips_agent(monkeypatch):
-    from finance_assistant.application.handlers import telegram_handlers as handlers
-
     class DummyFinanceAgent:
         def __init__(self, instructions=None):
             raise AssertionError("FinanceAgent should not be constructed when no spreadsheet is registered")
@@ -365,10 +396,21 @@ def test_unknown_telegram_user_gets_registration_message_and_skips_agent(monkeyp
         message=SimpleNamespace(text="hello", reply_text=reply_text),
     )
 
-    monkeypatch.setattr(handlers.telegram_adapter_service, "resolve_spreadsheet_id", lambda telegram_user_id: None)
-    monkeypatch.setattr(handlers, "FinanceAgent", DummyFinanceAgent)
+    telegram_adapter_service = TelegramAdapterService()
+    monkeypatch.setattr(telegram_adapter_service, "resolve_spreadsheet_id", lambda telegram_user_id: None)
+    dispatcher = FinanceReplyDispatcher(
+        telegram_adapter_service,
+        DummyFinanceAgent,
+        build_instructions,
+        build_unregistered_user_message,
+        markdown_to_telegram_html,
+    )
+    monkeypatch.setattr(
+        "finance_assistant.application.handlers.message_handler._build_dispatcher",
+        lambda: dispatcher,
+    )
 
-    asyncio.run(handlers.handle_message(update, None))
+    asyncio.run(handle_message(update, None))
 
     reply_text.assert_awaited_once()
     sent_message = reply_text.await_args.args[0]

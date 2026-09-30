@@ -47,24 +47,15 @@ src/finance_assistant/
       finance_agent.py
       prompts.py
   adapters/
-    messaging/
-      telegram_gateway.py
-      whatsapp_gateway.py
+    handlers/
+      telegram_handler.py #bot.py
+    gateways/
+      telegram_gateway.py #telegram service
     persistence/
       google_sheets/
         expense_ledger.py
         income_ledger.py
         budget_repository.py
-      firebase/
-        expense_ledger.py
-        income_ledger.py
-        budget_repository.py
-      postgresql/
-        expense_ledger.py
-        income_ledger.py
-        budget_repository.py
-    identity/
-      configured_user_registry.py
   features/
     expenses/
       commands.py
@@ -89,11 +80,6 @@ src/finance_assistant/
     onboarding/
       service.py
       ports.py
-  delivery/
-    telegram/
-      handlers.py
-    whatsapp/
-      webhook.py
   main.py
 tests/
   features/
