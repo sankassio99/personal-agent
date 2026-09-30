@@ -8,6 +8,7 @@ import pytest
 from finance_assistant.adapters.finance_agent.instructions import build_instructions
 from finance_assistant.adapters.telegram.message_builders import (
     build_help_message,
+    build_instructions_message,
     build_start_message,
     build_unregistered_user_message,
 )
@@ -15,6 +16,7 @@ from finance_assistant.adapters.telegram.message_formatter import markdown_to_te
 from finance_assistant.adapters.telegram.telegram_adapter_service import TelegramAdapterService
 from finance_assistant.features.audio.handler import handle_audio_message
 from finance_assistant.features.income.handler import INCOME_SPREADSHEET_RANGE, handle_income
+from finance_assistant.features.instructions.handler import handle_instructions
 from finance_assistant.features.message.handler import EXPENSES_SPREADSHEET_RANGE, handle_expense_message
 from finance_assistant.features.recurring.handler import RECURRING_SPREADSHEET_RANGE, handle_recurring
 from finance_assistant.adapters.agents.speech_to_text_agent import SpeechToTextAgent
@@ -80,13 +82,39 @@ def test_markdown_to_telegram_html_remove_multiple_hashtags():
 
     assert "Hello world universe" in html
 
-def test_build_start_message_includes_invoice_registration_guidance():
+def test_build_start_message_describes_finance_assistant_capabilities():
     message = build_start_message(123456789)
 
-    assert "@kassiodev" in message
-    assert "id do telegram" in message.lower()
-    assert "e-mail" in message.lower()
-    assert "Google Sheets" in message
+    assert "Assistente de Finanças" in message
+    assert "Telegram" in message
+    assert "despesas e rendimentos" in message
+    assert "resumo diário" in message
+    assert "envie /instrucoes" in message
+
+
+def test_build_instructions_message_has_simple_access_steps():
+    message = build_instructions_message()
+
+    assert "Como começar" in message
+    assert "• Fale com o administrador" in message
+    assert "ID do Telegram e seu e-mail" in message
+    assert "• Depois, envie /ajuda" in message
+
+
+def test_help_message_includes_instructions_command():
+    message = build_help_message()
+
+    assert "/instrucoes" in message
+    assert "solicitar acesso" in message
+
+
+def test_handle_instructions_sends_access_steps():
+    reply_text = AsyncMock()
+    update = SimpleNamespace(message=SimpleNamespace(reply_text=reply_text))
+
+    asyncio.run(handle_instructions(update, None))
+
+    reply_text.assert_awaited_once_with(build_instructions_message())
 
 
 def test_markdown_to_telegram_html_convert_bullet_points():
