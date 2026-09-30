@@ -4,14 +4,17 @@ from unittest.mock import AsyncMock
 
 import pytest
 
+from finance_assistant.adapters.services.event_bus import expense_recorded_event_bus
 from finance_assistant.adapters.telegram import telegram_service
 from finance_assistant.features.budget_notification import service as budget_notification_service
+from finance_assistant.features.budget_notification.observer import BudgetNotificationObserver
 from finance_assistant.adapters.agents import add_expense_tool
 
 
 def configure_expense_workflow(monkeypatch, actual, failure=None):
     events = []
     messages = []
+    expense_recorded_event_bus.clear()
 
     class AppendRequest:
         def execute(self):
@@ -57,6 +60,7 @@ def configure_expense_workflow(monkeypatch, actual, failure=None):
     monkeypatch.setattr(budget_notification_service, "GoogleSheetsRepository", BudgetRepository)
     monkeypatch.setattr(budget_notification_service, "TelegramAdapterService", TelegramAdapter)
     monkeypatch.setattr(telegram_service, "TelegramService", TelegramService)
+    expense_recorded_event_bus.subscribe(BudgetNotificationObserver())
 
     return events, messages
 

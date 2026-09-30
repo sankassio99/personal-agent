@@ -10,6 +10,7 @@ from agno.tools import tool
 from google.oauth2 import service_account
 from googleapiclient.discovery import build
 
+from finance_assistant.adapters.services.event_bus import ExpenseRecorded, expense_recorded_event_bus
 from finance_assistant.adapters.telegram.telegram_adapter_service import TelegramAdapterService
 
 logger = logging.getLogger(__name__)
@@ -58,20 +59,6 @@ def _get_sheets_service() -> Any:
         raise RuntimeError(
             f"Unable to build Google Sheets service with default credentials: {exc}"
         ) from exc
-
-
-def _notify_budget_usage_after_expense(telegram_user_id: int | str | None, category: str) -> None:
-    """Run the budget alert as a best-effort follow-up to a saved expense."""
-    try:
-        from finance_assistant.features.budget_notification.service import BudgetNotificationService
-
-        BudgetNotificationService().notify_if_needed(telegram_user_id, category)
-    except Exception:
-        logger.exception(
-            "Budget notification failed after expense was recorded for telegram_user_id=%s, category=%s",
-            telegram_user_id,
-            category,
-        )
 
 
 @tool
@@ -153,5 +140,5 @@ def add_expense(
 
     updated_range = result.get("updates", {}).get("updatedRange", "unknown")
     logger.info("Expense append finished successfully. spreadsheet_id=%s, updatedRange=%s", spreadsheet_id, updated_range)
-    _notify_budget_usage_after_expense(telegram_user_id, category)
+    expense_recorded_event_bus.publish(ExpenseRecorded(telegram_user_id, category))
     return f"Expense added successfully. Range: {updated_range}"
