@@ -24,7 +24,10 @@ The Google Sheets capability is optional and expects the following environment v
 
 ```bash
 export GOOGLE_APPLICATION_CREDENTIALS=/path/to/google-service-account.json
+export GOOGLE_SERVICE_ACCOUNT_FILE=/path/to/google-service-account.json
 ```
+
+Both variables must point to the same service-account file: the first is used by the project's Sheets helpers, the second by Agno's `GoogleSheetsTools` so it authenticates with the service account instead of falling back to interactive OAuth.
 
 ## Getting Started
 
