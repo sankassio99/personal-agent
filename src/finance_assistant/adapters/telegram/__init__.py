@@ -1,1 +1,1 @@
-"""Telegram integration module."""
+"""Shared Telegram adapters.""""""Telegram integration module."""

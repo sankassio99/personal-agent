@@ -2,17 +2,15 @@
 
 from telegram.ext import ApplicationBuilder, CommandHandler, MessageHandler, filters
 
-from finance_assistant.application.handlers.telegram_handlers import (
-    handle_audio_message,
-    handle_help,
-    handle_income,
-    handle_message,
-    handle_recurring,
-    handle_start,
-    handle_summary,
-)
-from finance_assistant.infrastructure.config.settings import settings
-
+from finance_assistant.features.audio.handler import handle_audio_message
+from finance_assistant.features.help.handler import handle_help
+from finance_assistant.features.income.handler import handle_income
+from finance_assistant.features.instructions.handler import handle_instructions
+from finance_assistant.features.message.handler import handle_expense_message
+from finance_assistant.features.recurring.handler import handle_recurring
+from finance_assistant.features.start.handler import handle_start
+from finance_assistant.features.summary.handler import handle_summary
+from finance_assistant.settings import settings
 
 def run_bot() -> None:
     """Start the Telegram finance assistant bot with command and message handlers."""
@@ -21,10 +19,11 @@ def run_bot() -> None:
 
     app = ApplicationBuilder().token(settings.telegram_token).build()
     app.add_handler(CommandHandler("start", handle_start))
+    app.add_handler(CommandHandler("instrucoes", handle_instructions))
     app.add_handler(CommandHandler("sumario", handle_summary))
     app.add_handler(CommandHandler("recorrente", handle_recurring))
     app.add_handler(CommandHandler("rendimentos", handle_income))
     app.add_handler(CommandHandler("ajuda", handle_help))
-    app.add_handler(MessageHandler(filters.TEXT & ~filters.COMMAND, handle_message))
+    app.add_handler(MessageHandler(filters.TEXT & ~filters.COMMAND, handle_expense_message))
     app.add_handler(MessageHandler(filters.AUDIO | filters.VOICE, handle_audio_message))
     app.run_polling()

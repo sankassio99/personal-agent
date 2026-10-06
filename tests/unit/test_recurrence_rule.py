@@ -1,6 +1,6 @@
 from datetime import datetime, time
 
-from finance_assistant.application.services.recurrence_rule import (
+from finance_assistant.adapters.services.recurrence_rule import (
     DailyRecurrence,
     MonthlyRecurrence,
     WeeklyRecurrence,

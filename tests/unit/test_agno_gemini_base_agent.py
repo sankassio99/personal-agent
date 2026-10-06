@@ -5,18 +5,26 @@ from unittest.mock import AsyncMock
 
 import pytest
 
-from finance_assistant.application.handlers.telegram_handlers import (
+from finance_assistant.adapters.finance_agent.instructions import build_instructions
+from finance_assistant.adapters.telegram.message_builders import (
     build_help_message,
+    build_instructions_message,
     build_start_message,
-    markdown_to_telegram_html,
+    build_unregistered_user_message,
 )
-from finance_assistant.infrastructure.agents.speech_to_text_agent import SpeechToTextAgent
-from finance_assistant.application.services.telegram_adapter_service import TelegramAdapterService
-from finance_assistant.infrastructure.agents.add_expense_tool import add_expense
-from finance_assistant.infrastructure.agents.base_agent import BaseAgent
-from finance_assistant.infrastructure.agents.response_agent import FinanceAgent
-from finance_assistant.infrastructure.config import settings as settings_module
-from finance_assistant.infrastructure.config.settings import settings
+from finance_assistant.adapters.telegram.message_formatter import markdown_to_telegram_html
+from finance_assistant.adapters.telegram.telegram_adapter_service import TelegramAdapterService
+from finance_assistant.features.audio.handler import handle_audio_message
+from finance_assistant.features.income.handler import INCOME_SPREADSHEET_RANGE, handle_income
+from finance_assistant.features.instructions.handler import handle_instructions
+from finance_assistant.features.message.handler import EXPENSES_SPREADSHEET_RANGE, handle_expense_message
+from finance_assistant.features.recurring.handler import RECURRING_SPREADSHEET_RANGE, handle_recurring
+from finance_assistant.adapters.agents.speech_to_text_agent import SpeechToTextAgent
+from finance_assistant.adapters.agents.tools.add_expense_tool import add_expense
+from finance_assistant.adapters.agents.base_agent import BaseAgent
+from finance_assistant.adapters.agents.response_agent import FinanceAgent
+from finance_assistant import settings as settings_module
+from finance_assistant.settings import settings
 
 
 def test_google_environment_settings_are_exposed_in_settings_surface(monkeypatch):
@@ -74,13 +82,39 @@ def test_markdown_to_telegram_html_remove_multiple_hashtags():
 
     assert "Hello world universe" in html
 
-def test_build_start_message_includes_invoice_registration_guidance():
+def test_build_start_message_describes_finance_assistant_capabilities():
     message = build_start_message(123456789)
 
-    assert "@kassiodev" in message
-    assert "id do telegram" in message.lower()
-    assert "e-mail" in message.lower()
-    assert "Google Sheets" in message
+    assert "Assistente de Finanças" in message
+    assert "Telegram" in message
+    assert "despesas e rendimentos" in message
+    assert "resumo diário" in message
+    assert "envie /instrucoes" in message
+
+
+def test_build_instructions_message_has_simple_access_steps():
+    message = build_instructions_message()
+
+    assert "Como começar" in message
+    assert "• Fale com o administrador" in message
+    assert "ID do Telegram e seu e-mail" in message
+    assert "• Depois, envie /ajuda" in message
+
+
+def test_help_message_includes_instructions_command():
+    message = build_help_message()
+
+    assert "/instrucoes" in message
+    assert "solicitar acesso" in message
+
+
+def test_handle_instructions_sends_access_steps():
+    reply_text = AsyncMock()
+    update = SimpleNamespace(message=SimpleNamespace(reply_text=reply_text))
+
+    asyncio.run(handle_instructions(update, None))
+
+    reply_text.assert_awaited_once_with(build_instructions_message())
 
 
 def test_markdown_to_telegram_html_convert_bullet_points():
@@ -90,16 +124,14 @@ def test_markdown_to_telegram_html_convert_bullet_points():
 
 
 def test_build_instructions_include_spreadsheet_id_and_range():
-    from finance_assistant.application.handlers import telegram_handlers as handlers
-
-    prompt = handlers.build_instructions("sheet-id", "'Recorrentes'!A1:E50")
+    prompt = build_instructions("sheet-id", "'Recorrentes'!A1:E50")
 
     assert "sheet-id" in prompt
     assert "'Recorrentes'!A1:E50" in prompt
 
 
 def test_base_agent_create_agent_accepts_spreadsheet_range_override(monkeypatch):
-    import finance_assistant.infrastructure.agents.base_agent as base_agent_module
+    import finance_assistant.adapters.agents.base_agent as base_agent_module
 
     captured = {}
 
@@ -133,7 +165,7 @@ def test_base_agent_create_agent_accepts_spreadsheet_range_override(monkeypatch)
 
 
 def test_get_last_expense_reads_the_last_non_empty_sheet_row(monkeypatch):
-    from finance_assistant.infrastructure.agents.get_last_expense_tool import get_last_expense
+    from finance_assistant.adapters.agents.tools.get_last_expense_tool import get_last_expense
 
     captured = {}
 
@@ -152,11 +184,11 @@ def test_get_last_expense_reads_the_last_non_empty_sheet_row(monkeypatch):
             return SimpleNamespace(values=lambda: DummyValues())
 
     monkeypatch.setattr(
-        "finance_assistant.infrastructure.agents.get_last_expense_tool._get_sheets_service",
+        "finance_assistant.adapters.agents.tools.get_last_expense_tool._get_sheets_service",
         lambda: DummySheets(),
     )
     monkeypatch.setattr(
-        "finance_assistant.infrastructure.agents.get_last_expense_tool.TelegramAdapterService",
+        "finance_assistant.adapters.agents.tools.get_last_expense_tool.TelegramAdapterService",
         lambda: SimpleNamespace(resolve_spreadsheet_id=lambda telegram_user_id: "sheet-id"),
     )
 
@@ -167,7 +199,7 @@ def test_get_last_expense_reads_the_last_non_empty_sheet_row(monkeypatch):
 
 
 def test_validate_expense_row_confirms_the_last_expense_values(monkeypatch):
-    from finance_assistant.infrastructure.agents.validate_expense_row_tool import validate_expense_row
+    from finance_assistant.adapters.agents.tools.validate_expense_row_tool import validate_expense_row
 
     class DummyGet:
         def execute(self):
@@ -184,11 +216,11 @@ def test_validate_expense_row_confirms_the_last_expense_values(monkeypatch):
             return SimpleNamespace(values=lambda: DummyValues())
 
     monkeypatch.setattr(
-        "finance_assistant.infrastructure.agents.validate_expense_row_tool._get_sheets_service",
+        "finance_assistant.adapters.agents.tools.validate_expense_row_tool._get_sheets_service",
         lambda: DummySheets(),
     )
     monkeypatch.setattr(
-        "finance_assistant.infrastructure.agents.validate_expense_row_tool.TelegramAdapterService",
+        "finance_assistant.adapters.agents.tools.validate_expense_row_tool.TelegramAdapterService",
         lambda: SimpleNamespace(resolve_spreadsheet_id=lambda telegram_user_id: "sheet-id"),
     )
 
@@ -204,8 +236,6 @@ def test_validate_expense_row_confirms_the_last_expense_values(monkeypatch):
 
 
 def test_handle_recurring_forwards_recurring_range_override(monkeypatch):
-    from finance_assistant.application.handlers import telegram_handlers as handlers
-
     captured = {}
 
     class DummyFinanceAgent:
@@ -222,18 +252,24 @@ def test_handle_recurring_forwards_recurring_range_override(monkeypatch):
         message=SimpleNamespace(text="/recurring", reply_text=reply_text),
     )
 
-    monkeypatch.setattr(handlers.telegram_adapter_service, "resolve_spreadsheet_id", lambda telegram_user_id: "sheet-id")
-    monkeypatch.setattr(handlers, "FinanceAgent", DummyFinanceAgent)
+    telegram_adapter_service = TelegramAdapterService()
+    monkeypatch.setattr(telegram_adapter_service, "resolve_spreadsheet_id", lambda telegram_user_id: "sheet-id")
+    monkeypatch.setattr(
+        "finance_assistant.features.recurring.handler.TelegramAdapterService",
+        lambda: telegram_adapter_service,
+    )
+    monkeypatch.setattr(
+        "finance_assistant.features.recurring.handler.FinanceAgent",
+        DummyFinanceAgent,
+    )
 
-    asyncio.run(handlers.handle_recurring(update, None))
+    asyncio.run(handle_recurring(update, None))
 
-    assert captured["spreadsheet_range"] == handlers.RECURRING_SPREADSHEET_RANGE
-    assert captured["instructions"] == handlers.build_instructions("sheet-id", handlers.RECURRING_SPREADSHEET_RANGE)
+    assert captured["spreadsheet_range"] == RECURRING_SPREADSHEET_RANGE
+    assert captured["instructions"] == build_instructions("sheet-id", RECURRING_SPREADSHEET_RANGE)
 
 
 def test_handle_income_forwards_income_range_override(monkeypatch):
-    from finance_assistant.application.handlers import telegram_handlers as handlers
-
     captured = {}
 
     class DummyFinanceAgent:
@@ -250,12 +286,20 @@ def test_handle_income_forwards_income_range_override(monkeypatch):
         message=SimpleNamespace(text="/rendimentos", reply_text=reply_text),
     )
 
-    monkeypatch.setattr(handlers.telegram_adapter_service, "resolve_spreadsheet_id", lambda telegram_user_id: "sheet-id")
-    monkeypatch.setattr(handlers, "FinanceAgent", DummyFinanceAgent)
+    telegram_adapter_service = TelegramAdapterService()
+    monkeypatch.setattr(telegram_adapter_service, "resolve_spreadsheet_id", lambda telegram_user_id: "sheet-id")
+    monkeypatch.setattr(
+        "finance_assistant.features.income.handler.TelegramAdapterService",
+        lambda: telegram_adapter_service,
+    )
+    monkeypatch.setattr(
+        "finance_assistant.features.income.handler.FinanceAgent",
+        DummyFinanceAgent,
+    )
 
-    asyncio.run(handlers.handle_income(update, None))
+    asyncio.run(handle_income(update, None))
 
-    assert captured["spreadsheet_range"] == handlers.INCOME_SPREADSHEET_RANGE
+    assert captured["spreadsheet_range"] == INCOME_SPREADSHEET_RANGE
     assert "get_last_income" in captured["instructions"]
     assert "get_available_categories" in captured["instructions"]
 
@@ -266,8 +310,6 @@ def test_help_message_includes_rendimentos_command():
 
 
 def test_handle_audio_message_transcribes_audio_then_forwards_transcript_to_finance_agent(monkeypatch):
-    from finance_assistant.application.handlers import telegram_handlers as handlers
-
     captured = {}
 
     class DummySpeechToTextAgent:
@@ -285,10 +327,10 @@ def test_handle_audio_message_transcribes_audio_then_forwards_transcript_to_fina
 
     class DummyFile:
         def __init__(self):
-            self.download_as_bytearray = AsyncMock(return_value=b"audio-bytes")
+            self.download_to_memory = AsyncMock(side_effect=lambda buffer: buffer.write(b"audio-bytes"))
 
     reply_text = AsyncMock()
-    context = SimpleNamespace(bot=SimpleNamespace(get_file=lambda file_id: DummyFile()))
+    context = SimpleNamespace(bot=SimpleNamespace(get_file=AsyncMock(return_value=DummyFile())))
     update = SimpleNamespace(
         effective_user=SimpleNamespace(id=123456789),
         message=SimpleNamespace(
@@ -303,20 +345,30 @@ def test_handle_audio_message_transcribes_audio_then_forwards_transcript_to_fina
         ),
     )
 
-    monkeypatch.setattr(handlers.telegram_adapter_service, "resolve_spreadsheet_id", lambda telegram_user_id: "sheet-id")
-    monkeypatch.setattr(handlers, "SpeechToTextAgent", DummySpeechToTextAgent)
-    monkeypatch.setattr(handlers, "FinanceAgent", DummyFinanceAgent)
-    monkeypatch.setattr(handlers, "markdown_to_telegram_html", lambda reply: reply)
+    telegram_adapter_service = TelegramAdapterService()
+    monkeypatch.setattr(telegram_adapter_service, "resolve_spreadsheet_id", lambda telegram_user_id: "sheet-id")
+    monkeypatch.setattr(
+        "finance_assistant.features.audio.handler.TelegramAdapterService",
+        lambda: telegram_adapter_service,
+    )
+    monkeypatch.setattr(
+        "finance_assistant.features.audio.handler.FinanceAgent",
+        DummyFinanceAgent,
+    )
+    monkeypatch.setattr(
+        "finance_assistant.features.audio.handler.SpeechToTextAgent",
+        DummySpeechToTextAgent,
+    )
 
-    asyncio.run(handlers.handle_audio_message(update, context))
+    asyncio.run(handle_audio_message(update, context))
 
     assert captured["message"] == "gasto de mercado"
-    assert captured["spreadsheet_range"] == handlers.EXPENSES_RANGE_NAME
+    assert captured["spreadsheet_range"] == EXPENSES_SPREADSHEET_RANGE
     assert "sheet-id" in captured["instructions"]
 
 
 def test_speech_to_text_agent_transcribes_supplied_audio_bytes(monkeypatch):
-    import finance_assistant.infrastructure.agents.speech_to_text_agent as speech_module
+    import finance_assistant.adapters.agents.speech_to_text_agent as speech_module
 
     captured = {}
 
@@ -353,8 +405,6 @@ def test_speech_to_text_agent_transcribes_supplied_audio_bytes(monkeypatch):
 
 
 def test_unknown_telegram_user_gets_registration_message_and_skips_agent(monkeypatch):
-    from finance_assistant.application.handlers import telegram_handlers as handlers
-
     class DummyFinanceAgent:
         def __init__(self, instructions=None):
             raise AssertionError("FinanceAgent should not be constructed when no spreadsheet is registered")
@@ -365,10 +415,18 @@ def test_unknown_telegram_user_gets_registration_message_and_skips_agent(monkeyp
         message=SimpleNamespace(text="hello", reply_text=reply_text),
     )
 
-    monkeypatch.setattr(handlers.telegram_adapter_service, "resolve_spreadsheet_id", lambda telegram_user_id: None)
-    monkeypatch.setattr(handlers, "FinanceAgent", DummyFinanceAgent)
+    telegram_adapter_service = TelegramAdapterService()
+    monkeypatch.setattr(telegram_adapter_service, "resolve_spreadsheet_id", lambda telegram_user_id: None)
+    monkeypatch.setattr(
+        "finance_assistant.features.message.handler.TelegramAdapterService",
+        lambda: telegram_adapter_service,
+    )
+    monkeypatch.setattr(
+        "finance_assistant.features.message.handler.FinanceAgent",
+        DummyFinanceAgent,
+    )
 
-    asyncio.run(handlers.handle_message(update, None))
+    asyncio.run(handle_expense_message(update, None))
 
     reply_text.assert_awaited_once()
     sent_message = reply_text.await_args.args[0]
@@ -400,8 +458,8 @@ def test_add_expense_tool_uses_google_sheets_append_support(monkeypatch):
         def spreadsheets(self):
             return SimpleNamespace(values=lambda: DummyValues())
 
-    monkeypatch.setattr("finance_assistant.infrastructure.agents.add_expense_tool._get_sheets_service", lambda: DummySheets())
-    monkeypatch.setattr("finance_assistant.infrastructure.agents.add_expense_tool.TelegramAdapterService", lambda: SimpleNamespace(resolve_spreadsheet_id=lambda telegram_user_id: "sheet-id"))
+    monkeypatch.setattr("finance_assistant.adapters.agents.tools.add_expense_tool._get_sheets_service", lambda: DummySheets())
+    monkeypatch.setattr("finance_assistant.adapters.agents.tools.add_expense_tool.TelegramAdapterService", lambda: SimpleNamespace(resolve_spreadsheet_id=lambda telegram_user_id: "sheet-id"))
 
     message = add_expense.entrypoint(
         date="2026-09-14",
@@ -420,7 +478,7 @@ def test_add_expense_tool_uses_google_sheets_append_support(monkeypatch):
 
 
 def test_get_last_income_reads_rendimentos_columns_for_mapped_user(monkeypatch):
-    from finance_assistant.infrastructure.agents.get_last_income_tool import get_last_income
+    from finance_assistant.adapters.agents.tools.get_last_income_tool import get_last_income
 
     captured = {}
 
@@ -439,11 +497,11 @@ def test_get_last_income_reads_rendimentos_columns_for_mapped_user(monkeypatch):
             return SimpleNamespace(values=lambda: Values())
 
     monkeypatch.setattr(
-        "finance_assistant.infrastructure.agents.get_last_income_tool._get_sheets_service",
+        "finance_assistant.adapters.agents.tools.get_last_income_tool._get_sheets_service",
         lambda: Sheets(),
     )
     monkeypatch.setattr(
-        "finance_assistant.infrastructure.agents.get_last_income_tool.TelegramAdapterService",
+        "finance_assistant.adapters.agents.tools.get_last_income_tool.TelegramAdapterService",
         lambda: SimpleNamespace(resolve_spreadsheet_id=lambda telegram_user_id: "sheet-id"),
     )
 
@@ -452,14 +510,14 @@ def test_get_last_income_reads_rendimentos_columns_for_mapped_user(monkeypatch):
 
 
 def test_get_last_income_rejects_unmapped_user():
-    from finance_assistant.infrastructure.agents.get_last_income_tool import get_last_income
+    from finance_assistant.adapters.agents.tools.get_last_income_tool import get_last_income
 
     with pytest.raises(ValueError, match="No Google spreadsheet id"):
         get_last_income.entrypoint(telegram_user_id=999999999)
 
 
 def test_add_income_appends_to_rendimentos_columns(monkeypatch):
-    from finance_assistant.infrastructure.agents.add_income_tool import add_income
+    from finance_assistant.adapters.agents.tools.add_income_tool import add_income
 
     captured = {}
 
@@ -477,11 +535,11 @@ def test_add_income_appends_to_rendimentos_columns(monkeypatch):
             return SimpleNamespace(values=lambda: Values())
 
     monkeypatch.setattr(
-        "finance_assistant.infrastructure.agents.add_income_tool._get_sheets_service",
+        "finance_assistant.adapters.agents.tools.add_income_tool._get_sheets_service",
         lambda: Sheets(),
     )
     monkeypatch.setattr(
-        "finance_assistant.infrastructure.agents.add_income_tool.TelegramAdapterService",
+        "finance_assistant.adapters.agents.tools.add_income_tool.TelegramAdapterService",
         lambda: SimpleNamespace(resolve_spreadsheet_id=lambda telegram_user_id: "sheet-id"),
     )
 
@@ -502,7 +560,7 @@ def test_add_income_appends_to_rendimentos_columns(monkeypatch):
 
 
 def test_add_income_propagates_google_sheets_failure(monkeypatch):
-    from finance_assistant.infrastructure.agents.add_income_tool import add_income
+    from finance_assistant.adapters.agents.tools.add_income_tool import add_income
 
     class Values:
         def append(self, **kwargs):
@@ -513,7 +571,7 @@ def test_add_income_propagates_google_sheets_failure(monkeypatch):
             return SimpleNamespace(values=lambda: Values())
 
     monkeypatch.setattr(
-        "finance_assistant.infrastructure.agents.add_income_tool._get_sheets_service",
+        "finance_assistant.adapters.agents.tools.add_income_tool._get_sheets_service",
         lambda: Sheets(),
     )
 
@@ -551,7 +609,7 @@ def test_get_available_categories_reads_the_configured_summary_range(
     values,
     expected_message,
 ):
-    from finance_assistant.infrastructure.agents.get_available_categories_tool import get_available_categories
+    from finance_assistant.adapters.agents.tools.get_available_categories_tool import get_available_categories
 
     captured = {}
 
@@ -570,11 +628,11 @@ def test_get_available_categories_reads_the_configured_summary_range(
             return SimpleNamespace(values=lambda: SheetsValues())
 
     monkeypatch.setattr(
-        "finance_assistant.infrastructure.agents.get_available_categories_tool._get_sheets_service",
+        "finance_assistant.adapters.agents.tools.get_available_categories_tool._get_sheets_service",
         lambda: Sheets(),
     )
     monkeypatch.setattr(
-        "finance_assistant.infrastructure.agents.get_available_categories_tool.TelegramAdapterService",
+        "finance_assistant.adapters.agents.tools.get_available_categories_tool.TelegramAdapterService",
         lambda: SimpleNamespace(resolve_spreadsheet_id=lambda telegram_user_id: "sheet-id"),
     )
 
@@ -583,14 +641,14 @@ def test_get_available_categories_reads_the_configured_summary_range(
 
 
 def test_get_available_categories_rejects_unmapped_user_without_sheets_request(monkeypatch):
-    from finance_assistant.infrastructure.agents.get_available_categories_tool import get_available_categories
+    from finance_assistant.adapters.agents.tools.get_available_categories_tool import get_available_categories
 
     monkeypatch.setattr(
-        "finance_assistant.infrastructure.agents.get_available_categories_tool.TelegramAdapterService",
+        "finance_assistant.adapters.agents.tools.get_available_categories_tool.TelegramAdapterService",
         lambda: SimpleNamespace(resolve_spreadsheet_id=lambda telegram_user_id: None),
     )
     monkeypatch.setattr(
-        "finance_assistant.infrastructure.agents.get_available_categories_tool._get_sheets_service",
+        "finance_assistant.adapters.agents.tools.get_available_categories_tool._get_sheets_service",
         lambda: pytest.fail("Google Sheets must not be accessed for an unmapped user."),
     )
 
@@ -599,7 +657,7 @@ def test_get_available_categories_rejects_unmapped_user_without_sheets_request(m
 
 
 def test_get_available_categories_propagates_google_sheets_failures(monkeypatch):
-    from finance_assistant.infrastructure.agents.get_available_categories_tool import get_available_categories
+    from finance_assistant.adapters.agents.tools.get_available_categories_tool import get_available_categories
 
     class SheetsValues:
         def get(self, **kwargs):
@@ -610,7 +668,7 @@ def test_get_available_categories_propagates_google_sheets_failures(monkeypatch)
             return SimpleNamespace(values=lambda: SheetsValues())
 
     monkeypatch.setattr(
-        "finance_assistant.infrastructure.agents.get_available_categories_tool._get_sheets_service",
+        "finance_assistant.adapters.agents.tools.get_available_categories_tool._get_sheets_service",
         lambda: Sheets(),
     )
 
@@ -619,17 +677,19 @@ def test_get_available_categories_propagates_google_sheets_failures(monkeypatch)
 
 
 def test_expense_prompt_requires_category_retrieval_only_when_omitted():
-    from finance_assistant.infrastructure.agents.prompts import FINANCE_ASSISTANT_PROMPT
+    from finance_assistant.adapters.agents.prompts import FINANCE_ASSISTANT_PROMPT
+    from finance_assistant.features.message.handler import EXPENSE_INSTRUCTIONS
 
-    assert 'get_available_categories with entry_type "expense"' in FINANCE_ASSISTANT_PROMPT
-    assert "Preserve a category explicitly provided by the user." in FINANCE_ASSISTANT_PROMPT
-    assert "if none matches, ask the user for a category and do not add the expense" in FINANCE_ASSISTANT_PROMPT
+    assert "Don't return tables" in FINANCE_ASSISTANT_PROMPT
+    assert 'get_available_categories with entry_type "expense"' in EXPENSE_INSTRUCTIONS
+    assert "Preserve a category explicitly provided by the user." in EXPENSE_INSTRUCTIONS
+    assert "if none matches, ask the user for a category and do not add the expense" in EXPENSE_INSTRUCTIONS
 
 
 def test_income_tools_reuse_the_expense_google_sheets_service_builder():
-    from finance_assistant.infrastructure.agents.add_expense_tool import _get_sheets_service as expense_service
-    from finance_assistant.infrastructure.agents.add_income_tool import _get_sheets_service as income_append_service
-    from finance_assistant.infrastructure.agents.get_last_income_tool import _get_sheets_service as income_read_service
+    from finance_assistant.adapters.agents.tools.add_expense_tool import _get_sheets_service as expense_service
+    from finance_assistant.adapters.agents.tools.add_income_tool import _get_sheets_service as income_append_service
+    from finance_assistant.adapters.agents.tools.get_last_income_tool import _get_sheets_service as income_read_service
 
     assert income_append_service is expense_service
     assert income_read_service is expense_service

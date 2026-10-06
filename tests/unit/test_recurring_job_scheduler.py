@@ -1,7 +1,7 @@
 from datetime import datetime, timedelta
 
-from finance_assistant.application.services.recurrence_rule import RecurrenceRule
-from finance_assistant.application.services.recurring_job_scheduler import RecurringJobScheduler
+from finance_assistant.adapters.services.recurrence_rule import RecurrenceRule
+from finance_assistant.adapters.services.recurring_job_scheduler import RecurringJobScheduler
 
 
 class FixedRecurrence(RecurrenceRule):
@@ -37,7 +37,7 @@ def test_recurring_job_scheduler_continues_after_callback_exception(monkeypatch)
             raise RuntimeError("boom")
 
     monkeypatch.setattr(
-        "finance_assistant.application.services.recurring_job_scheduler.time_module.sleep",
+        "finance_assistant.adapters.services.recurring_job_scheduler.time_module.sleep",
         fake_sleep,
     )
 
