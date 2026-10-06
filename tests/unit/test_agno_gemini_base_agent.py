@@ -93,9 +93,10 @@ def test_build_start_message_describes_finance_assistant_capabilities():
 
 
 def test_build_instructions_message_has_simple_access_steps():
-    message = build_instructions_message()
+    message = build_instructions_message(123456789)
 
     assert "Como começar" in message
+    assert "Seu ID do Telegram é: 123456789" in message
     assert "• Fale com o administrador" in message
     assert "ID do Telegram e seu e-mail" in message
     assert "• Depois, envie /ajuda" in message
@@ -110,11 +111,14 @@ def test_help_message_includes_instructions_command():
 
 def test_handle_instructions_sends_access_steps():
     reply_text = AsyncMock()
-    update = SimpleNamespace(message=SimpleNamespace(reply_text=reply_text))
+    update = SimpleNamespace(
+        effective_user=SimpleNamespace(id=123456789),
+        message=SimpleNamespace(reply_text=reply_text),
+    )
 
     asyncio.run(handle_instructions(update, None))
 
-    reply_text.assert_awaited_once_with(build_instructions_message())
+    reply_text.assert_awaited_once_with(build_instructions_message(123456789))
 
 
 def test_markdown_to_telegram_html_convert_bullet_points():

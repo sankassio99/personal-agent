@@ -45,11 +45,18 @@ def build_unregistered_user_message(telegram_user_id: int | str | None) -> str:
     )
 
 
-def build_instructions_message() -> str:
+def build_instructions_message(telegram_user_id: int | str | None = None) -> str:
     """Return a simple step-by-step guide for requesting access."""
+    user_id_step = (
+        f"• Seu ID do Telegram é: {telegram_user_id}.\n"
+        if telegram_user_id is not None
+        else "• Consulte seu ID do Telegram.\n"
+    )
+
     return (
         "📋 Como começar\n\n"
         "Siga estes passos para usar o Assistente de Finanças:\n"
+        f"{user_id_step}"
         "• Fale com o administrador @kassiodev.\n"
         "• Envie seu ID do Telegram e seu e-mail.\n"
         "• Aguarde a criação da sua planilha e a confirmação do cadastro.\n"
