@@ -23,10 +23,7 @@ Copy `.env.example` to `.env` and fill in the required values.
 The Google Sheets capability is optional and expects the following environment values to be declared when the integration is enabled:
 
 ```bash
-export GOOGLE_CLIENT_ID=your_client_id_here
-export GOOGLE_CLIENT_SECRET=your_client_secret_here
-export GOOGLE_PROJECT_ID=your_project_id_here
-export GOOGLE_SHEETS_CREDENTIALS=/path/to/credentials.json
+export GOOGLE_APPLICATION_CREDENTIALS=/path/to/google-service-account.json
 ```
 
 ## Getting Started

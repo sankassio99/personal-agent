@@ -148,6 +148,8 @@ def test_base_agent_create_agent_accepts_spreadsheet_range_override(monkeypatch)
 
     monkeypatch.setattr(base_agent_module, "GoogleSheetsTools", DummyGoogleSheetsTools)
     monkeypatch.setattr(base_agent_module, "Agent", DummyAgent)
+    credentials = object()
+    monkeypatch.setattr(base_agent_module, "get_sheets_credentials", lambda: credentials)
 
     base = BaseAgent.__new__(BaseAgent)
     base.model = object()
@@ -155,6 +157,7 @@ def test_base_agent_create_agent_accepts_spreadsheet_range_override(monkeypatch)
     agent = base._create_agent("You answer finance questions.", spreadsheet_range="'Sumário'!B27:F42")
 
     assert captured["spreadsheet_range"] == "'Sumário'!B27:F42"
+    assert captured["creds"] is credentials
     assert agent.tools[0] is not None
     assert agent.tools[1].name == "get_last_expense"
     assert agent.tools[2].name == "add_expense"
