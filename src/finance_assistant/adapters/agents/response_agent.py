@@ -1,6 +1,7 @@
 """Gemini-backed response adapter for message generation."""
 
 import logging
+from typing import Any
 
 from finance_assistant.adapters.agents.base_agent import BaseAgent
 from finance_assistant.adapters.agents.prompts import FINANCE_ASSISTANT_PROMPT
@@ -11,11 +12,21 @@ logger = logging.getLogger(__name__)
 class FinanceAgent(BaseAgent):
     """Response adapter that builds a message-oriented agent around Gemini."""
 
-    def __init__(self, instructions: str = FINANCE_ASSISTANT_PROMPT, spreadsheet_range: str | None = None, **kwargs):
+    def __init__(
+        self,
+        instructions: str = FINANCE_ASSISTANT_PROMPT,
+        spreadsheet_range: str | None = None,
+        additional_tools: list[Any] | None = None,
+        **kwargs,
+    ):
         super().__init__(spreadsheet_range=spreadsheet_range, **kwargs)
         logger.info("FinanceAgent starting initialization.")
 
-        self.agent = self._create_agent(instructions=instructions, spreadsheet_range=self.spreadsheet_range)
+        self.agent = self._create_agent(
+            instructions=instructions,
+            spreadsheet_range=self.spreadsheet_range,
+            additional_tools=additional_tools,
+        )
 
         logger.info("FinanceAgent ready with configured instructions.")
 

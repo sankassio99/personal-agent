@@ -7,9 +7,15 @@ from finance_assistant.adapters.telegram.message_builders import build_unregiste
 from finance_assistant.adapters.telegram.message_formatter import markdown_to_telegram_html
 from finance_assistant.adapters.telegram.telegram_adapter_service import TelegramAdapterService
 from finance_assistant.adapters.agents.tools.add_expense_tool import telegram_user_context
+from finance_assistant.adapters.agents.tools.update_recurring_status_tool import update_recurring_status
 from finance_assistant.adapters.agents.response_agent import FinanceAgent
 
 RECURRING_SPREADSHEET_RANGE = "'Recorrentes'!A1:E50"
+RECURRING_STATUS_INSTRUCTIONS = (
+    " For requests to update a recurring payment status, always use the "
+    "update_recurring_status tool. Pass the recurring name and requested status, "
+    "then report the tool result. Do not use generic spreadsheet tools for this update."
+)
 
 
 async def handle_recurring(update, context) -> None:
@@ -24,8 +30,12 @@ async def handle_recurring(update, context) -> None:
         return
 
     finance_agent = FinanceAgent(
-        instructions=build_instructions(spreadsheet_id, RECURRING_SPREADSHEET_RANGE),
+        instructions=(
+            build_instructions(spreadsheet_id, RECURRING_SPREADSHEET_RANGE)
+            + RECURRING_STATUS_INSTRUCTIONS
+        ),
         spreadsheet_range=RECURRING_SPREADSHEET_RANGE,
+        additional_tools=[update_recurring_status],
     )
     with telegram_user_context(telegram_user_id):
         reply = finance_agent.respond(message)

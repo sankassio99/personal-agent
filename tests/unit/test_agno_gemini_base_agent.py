@@ -171,6 +171,35 @@ def test_base_agent_create_agent_accepts_spreadsheet_range_override(monkeypatch)
     assert agent.tools[6].name == "get_available_categories"
 
 
+def test_base_agent_appends_additional_tools_only_when_requested(monkeypatch):
+    import finance_assistant.adapters.agents.base_agent as base_agent_module
+    from finance_assistant.adapters.agents.tools.update_recurring_status_tool import (
+        update_recurring_status,
+    )
+
+    class DummyGoogleSheetsTools:
+        def __init__(self, **kwargs):
+            pass
+
+    class DummyAgent:
+        def __init__(self, tools=None, **kwargs):
+            self.tools = tools
+
+    monkeypatch.setattr(base_agent_module, "GoogleSheetsTools", DummyGoogleSheetsTools)
+    monkeypatch.setattr(base_agent_module, "Agent", DummyAgent)
+    monkeypatch.setattr(base_agent_module, "get_sheets_credentials", lambda: object())
+
+    base = BaseAgent.__new__(BaseAgent)
+    base.model = object()
+    base.spreadsheet_range = None
+
+    default_agent = base._create_agent("test")
+    recurring_agent = base._create_agent("test", additional_tools=[update_recurring_status])
+
+    assert update_recurring_status not in default_agent.tools
+    assert recurring_agent.tools[-1] is update_recurring_status
+
+
 def test_get_last_expense_reads_the_last_non_empty_sheet_row(monkeypatch):
     from finance_assistant.adapters.agents.tools.get_last_expense_tool import get_last_expense
 
@@ -246,9 +275,10 @@ def test_handle_recurring_forwards_recurring_range_override(monkeypatch):
     captured = {}
 
     class DummyFinanceAgent:
-        def __init__(self, instructions=None, spreadsheet_range=None):
+        def __init__(self, instructions=None, spreadsheet_range=None, additional_tools=None):
             captured["instructions"] = instructions
             captured["spreadsheet_range"] = spreadsheet_range
+            captured["additional_tools"] = additional_tools
 
         def respond(self, message):
             return "ok"
@@ -273,7 +303,11 @@ def test_handle_recurring_forwards_recurring_range_override(monkeypatch):
     asyncio.run(handle_recurring(update, None))
 
     assert captured["spreadsheet_range"] == RECURRING_SPREADSHEET_RANGE
-    assert captured["instructions"] == build_instructions("sheet-id", RECURRING_SPREADSHEET_RANGE)
+    assert captured["instructions"].startswith(
+        build_instructions("sheet-id", RECURRING_SPREADSHEET_RANGE)
+    )
+    assert "update_recurring_status" in captured["instructions"]
+    assert captured["additional_tools"][0].name == "update_recurring_status"
 
 
 def test_handle_income_forwards_income_range_override(monkeypatch):

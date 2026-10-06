@@ -2,6 +2,7 @@
 
 import logging
 import os
+from typing import Any
 
 from finance_assistant.settings import settings
 from agno.tools.google.sheets import GoogleSheetsTools
@@ -61,10 +62,16 @@ class BaseAgent:
         self.model = Gemini(id=self.model_id, api_key=self.api_key)
         logger.info("BaseAgent attached Gemini model object for response flow.")
 
-    def _create_agent(self, instructions: str, spreadsheet_range: str | None = None, **kwargs):
+    def _create_agent(
+        self,
+        instructions: str,
+        spreadsheet_range: str | None = None,
+        additional_tools: list[Any] | None = None,
+        **kwargs,
+    ):
         """Create an Agno-style agent from a common model configuration."""
         range_to_use = spreadsheet_range or self.spreadsheet_range or SAMPLE_RANGE_NAME
-        
+
         google_sheets_tool = GoogleSheetsTools(
             spreadsheet_range=range_to_use,
             scopes=SHEETS_SCOPES,
@@ -75,16 +82,20 @@ class BaseAgent:
         )
 
         logger.info("Creating Agent with instructions length=%s", len(instructions))
+        tools = [
+            google_sheets_tool,
+            get_last_expense,
+            add_expense,
+            validate_expense_row,
+            get_last_income,
+            add_income,
+            get_available_categories,
+        ]
+        if additional_tools:
+            tools.extend(additional_tools)
+
         return Agent(
-            tools=[
-                google_sheets_tool,
-                get_last_expense,
-                add_expense,
-                validate_expense_row,
-                get_last_income,
-                add_income,
-                get_available_categories,
-            ],
+            tools=tools,
             model=self.model,
             instructions=instructions,
             **kwargs,
